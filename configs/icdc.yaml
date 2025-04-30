@@ -1,0 +1,25 @@
+# other params to potentially include:
+# HTTP headers/auth tokens
+# query params
+# retry settings
+# target opensearch index (or opensearch connection info)
+project: ICDC
+sources:
+  - name: IDC
+    api_base_url: https://api.imaging.datacommons.cancer.gov/v1
+    dataset_base_url: https://portal.imaging.datacommons.cancer.gov/explore/filters/?collection_id=
+    endpoint: /collections
+    match_key: collection_id
+    filter_prefix: icdc_
+    post_processor: clean_idc_descriptions
+  - name: TCIA
+    api_base_url: https://services.cancerimagingarchive.net/services/v4
+    dataset_base_url: https://nbia.cancerimagingarchive.net/nbia-search/?MinNumberOfStudiesCriteria=1&CollectionCriteria=
+    discovery:
+      endpoint: /TCIA/query/getCollectionValues
+      match_key: Collection
+      filter_prefix: ICDC-
+    fetch:
+      endpoint_template: /TCIA/query/getSeries?Collection={collection_id}
+      key_param: collection_id
+    post_processor: aggregate_tcia_series

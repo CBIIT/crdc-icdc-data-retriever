@@ -23,3 +23,15 @@ sources:
       endpoint_template: /TCIA/query/getSeries?Collection={collection_id}
       key_param: collection_id
     post_processor: aggregate_tcia_series
+  - name: ICDC
+    api_base_url: https://caninecommons-dev.cancer.gov
+    endpoint: /graphql/
+    query: |
+      {
+        studiesByProgram {
+            clinical_study_designation
+            numberOfImageCollections
+            numberOfCRDCNodes
+        }
+      }
+    method: POST

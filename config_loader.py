@@ -18,36 +18,28 @@ class ConfigHandler:
         # minimal validation logic
         if "project" not in self.config:
             raise ValueError("Missing 'project' key in config")
-        if "sources" not in self.config or not isinstance(self.config["sources"], list):
+        
+        sources = self.config.get("sources")
+        if not sources or not isinstance(sources, list):
             raise ValueError("Missing or invalid 'sources' section in config")
-        for source in self.config["sources"]:
-            if (
-                "name" not in source or 
-                "type" not in source or 
-                "api_base_url" not in source or
-                ("endpoint" not in source and "discovery" not in source)
-            ):
-                raise ValueError("Each data source must define a 'name', 'type', 'api_base_url' and 'endpoint'")
-            if (
-                source["type"] == "graphql" and
-                (("query" not in source or "method" not in source) or
-                source["method"].lower() != "post") 
-            ):
-                raise ValueError("GraphQL type sources require a 'query' and POST 'method'")
-            if "discovery" in source and "fetch" not in source:
-                raise ValueError("'fetch' property undefined for source requiring 'discovery'")
-            if (
-                "discovery" in source and
-                "endpoint" not in source["discovery"] or
-                "match_key" not in source["discovery"] or
-                "filter_prefix" not in source["discovery"]
-            ):
-                raise ValueError("'discovery' property requires 'endpoint', 'match_key' and 'filter_prefix'")
-            if (
-                "discovery" in source and
-                "endpoint_template" not in source["fetch"] or
-                "key_param" not in source["fetch"]
-            ):
-                raise ValueError("'fetch' property requires 'endpoint_template' and 'key_param'")
+        
+        for source in sources:
+            if not all(key in source for key in ("name", "type", "api_base_url")):
+                raise ValueError("Each data source must define a 'name', 'type' and 'api_base_url'")
             
-        return
+            if "discovery" not in source and "endpoint" not in source:
+                raise ValueError("Source must define either 'endpoint' or 'discovery'")
+            
+            if source["type"] == "graphql":
+                if source.get("method", "").lower() != "post" or "query" not in source:
+                    raise ValueError("'graphql' sources must have a POST 'method' and a valid 'query'")
+
+            if "discovery" in source:
+                discovery = source["discovery"]
+                fetch = source.get("fetch", {})
+                if not all(key in discovery for key in ("endpoint", "match_key", "filter_prefix")):
+                    raise ValueError("'discovery' property requires defined 'endpoint', 'match_key' and 'filter_prefix'")
+                if not fetch:
+                    raise ValueError("source using 'discovery' must define a 'fetch' section with 'endpoint_template' and 'key_param'")
+                if not all(key in fetch for key in ("endpoint_template", "key_param")):
+                    raise ValueError("'fetch' property requires defined 'endpoint_template' and 'key_param'")

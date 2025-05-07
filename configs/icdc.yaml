@@ -10,6 +10,7 @@ sources:
     api_base_url: https://api.imaging.datacommons.cancer.gov/v1
     dataset_base_url: https://portal.imaging.datacommons.cancer.gov/explore/filters/?collection_id=
     endpoint: /collections
+    response_data_key: collections  # optional key
     match_key: collection_id
     filter_prefix: icdc_
     post_processor: clean_idc_descriptions

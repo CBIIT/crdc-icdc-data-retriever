@@ -14,6 +14,7 @@ def fetch_from_source(source_config):
     except Exception:
         return None
 
+
 def fetch_direct(source):
     # expand to allow for authentication or additional headers, etc.
     try:
@@ -51,12 +52,25 @@ def do_discovery_then_fetch(source):
         ]
         # iterate filtered results, passing each to the fetch phase
         # fetch phase
+        fetch_data = []
+        for match in filtered_discovery_data:
+            try:
+                fetch_url = source["fetch"]["endpoint_template"].format(collection_id=source["fetch"]["key_param"])
+            except KeyError as e:
+                raise ValueError(f"Missing key in 'endpoint_template': {e}")
+            res = requests.get(fetch_url)
+            data = res.json()
+            if "response_data_key" in source:
+                data = data.get(source["response_data_key"], {})
+            fetch_data.append(data)
+        return fetch_data
     except requests.exceptions.RequestException as e:
         # specific error logging
         raise RuntimeError(f"Request failed for source {source["name"]}: {e}")
     except ValueError as e:
         # specific error logging
         raise RuntimeError(f"Invalid JSON response for source {source["name"]}: {e}")
+
 
 def fetch_graphql(source):
     try:

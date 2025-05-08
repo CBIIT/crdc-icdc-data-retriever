@@ -6,11 +6,11 @@ def fetch_from_source(source_config):
     try:
         if source_config["type"] == "rest":
             if "discovery" in source_config:
-                do_discovery_then_fetch(source_config)
+                return do_discovery_then_fetch(source_config)
             else:
-                fetch_direct(source_config)
+                return fetch_direct(source_config)
         elif source_config["type"] == "graphql":
-            fetch_graphql(source_config)
+            return fetch_graphql(source_config)
     except Exception:
         return None
 

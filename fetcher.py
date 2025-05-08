@@ -50,12 +50,12 @@ def do_discovery_then_fetch(source):
         filtered_discovery_data = [
             item[match_key] for item in discovery_data if filter_prefix in item[match_key]
         ]
-        # iterate filtered results, passing each to the fetch phase
         # fetch phase
         fetch_data = []
         for match in filtered_discovery_data:
             try:
-                fetch_url = source["fetch"]["endpoint_template"].format(collection_id=source["fetch"]["key_param"])
+                param = source["fetch"]["key_param"]
+                fetch_url = source["fetch"]["endpoint_template"].format(**{param: match})
             except KeyError as e:
                 raise ValueError(f"Missing key in 'endpoint_template': {e}")
             res = requests.get(fetch_url)

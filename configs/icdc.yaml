@@ -8,7 +8,7 @@ sources:
   - name: IDC
     type: rest
     api_base_url: https://api.imaging.datacommons.cancer.gov/v1
-    dataset_base_url: https://portal.imaging.datacommons.cancer.gov/explore/filters/?collection_id=
+    dataset_base_url: https://portal.imaging.datacommons.cancer.gov/explore/filters/?collection_id={collection_id}
     endpoint: /collections
     response_data_key: collections  # optional key
     match_key: collection_id
@@ -17,7 +17,7 @@ sources:
   - name: TCIA
     type: rest
     api_base_url: https://services.cancerimagingarchive.net/services/v4
-    dataset_base_url: https://nbia.cancerimagingarchive.net/nbia-search/?MinNumberOfStudiesCriteria=1&CollectionCriteria=
+    dataset_base_url: https://nbia.cancerimagingarchive.net/nbia-search/?MinNumberOfStudiesCriteria=1&CollectionCriteria={collection_id}
     discovery:
       endpoint: /TCIA/query/getCollectionValues
       match_key: Collection

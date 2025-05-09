@@ -23,9 +23,7 @@ def fetch_direct(source):
         if not response.ok:
             raise RuntimeError(f"Fetch failed: {response.status_code} {response.reason}")
         data = response.json()
-        if "response_data_key" in source:
-            data = data.get(source["response_data_key"], {})
-        return data
+        return extract_response_data(source, data)
     except requests.exceptions.RequestException as e:
         # specific error logging
         raise RuntimeError(f"Request failed for source {source["name"]}: {e}")
@@ -44,9 +42,7 @@ def do_discovery_then_fetch(source):
         discovery_res = requests.get(discovery_url)
         if not discovery_res.ok:
             raise RuntimeError(f"Fetch failed: {discovery_res.status_code} {discovery_res.reason}")
-        discovery_data = discovery_res.json()
-        if "response_data_key" in source:
-            discovery_data = discovery_data.get(source["response_data_key"], {})
+        discovery_data = extract_response_data(source, discovery_res.json())
         filtered_discovery_data = [
             item[match_key] for item in discovery_data if filter_prefix in item[match_key]
         ]
@@ -59,9 +55,7 @@ def do_discovery_then_fetch(source):
             except KeyError as e:
                 raise ValueError(f"Missing key in 'endpoint_template': {e}")
             res = requests.get(fetch_url)
-            data = res.json()
-            if "response_data_key" in source:
-                data = data.get(source["response_data_key"], {})
+            data = extract_response_data(source, res.json())
             fetch_data.append(data)
         return fetch_data
     except requests.exceptions.RequestException as e:
@@ -79,12 +73,15 @@ def fetch_graphql(source):
         if not response.ok:
             raise RuntimeError(f"Fetch failed: {response.status_code} {response.reason}")
         data = response.json()
-        if "response_data_key" in source:
-            data = data.get(source["response_data_key"], {})
-        return data
+        return extract_response_data(source, data)
     except requests.exceptions.RequestException as e:
         # specific error logging
         raise RuntimeError(f"Request failed for source {source["name"]}: {e}")
     except ValueError as e:
         # specific error logging
         raise RuntimeError(f"Invalid JSON response for source {source["name"]}: {e}")
+    
+
+def extract_response_data(source, response_json):
+    key = source.get("response_data_key")
+    return response_json.get(key, {}) if key else response_json

@@ -1,3 +1,4 @@
+import re
 from functools import reduce
 from html2text import HTML2Text
 
@@ -12,9 +13,9 @@ def transform_idc_description_html(html: str) -> str:
     converter.single_line_break = True
 
     text = converter.handle(html)
-    text = text.replace("\n", " ").replace("  ", " ").replace("    ", " ")
+    text = re.sub(r"\s+", " ", text).strip()
 
-    return text.strip()
+    return text
 
 
 def aggregate_tcia_series_data(data: list) -> dict:

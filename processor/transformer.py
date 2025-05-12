@@ -1,5 +1,4 @@
 import re
-from functools import reduce
 from html2text import HTML2Text
 
 
@@ -20,7 +19,7 @@ def transform_idc_description_html(html: str) -> str:
 
 def aggregate_tcia_series_data(data: list, study: str, collection_id: str) -> dict:
     # Python version of node.js getTciaCollectionMetadata
-    total_images = reduce(lambda x, y: x + y, [int(i["ImageCount"]) for i in data])
+    total_images = sum(int(i["ImageCount"]) for i in data)
     total_patients = len(set([i["PatientID"] for i in data]))
     unique_modalities = list(set([i["Modality"] for i in data]))
     unique_bodyparts = list(set([i["BodyPartExamined"] for i in data]))

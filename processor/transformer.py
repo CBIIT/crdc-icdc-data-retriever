@@ -18,15 +18,22 @@ def transform_idc_description_html(html: str) -> str:
     return text
 
 
-def aggregate_tcia_series_data(data: list) -> dict:
+def aggregate_tcia_series_data(data: list, study: str, collection_id: str) -> dict:
     # Python version of node.js getTciaCollectionMetadata
     total_images = reduce(lambda x, y: x + y, [int(i["ImageCount"]) for i in data])
     total_patients = len(set([i["PatientID"] for i in data]))
     unique_modalities = list(set([i["Modality"] for i in data]))
     unique_bodyparts = list(set([i["BodyPartExamined"] for i in data]))
 
-    # hardcode inaccessible TCIA data for GLIOMA01...
-    # determine how study can be passed to this
-    # so additional values can be appended for it and only it...
+    # hardcode inaccessible TCIA data for GLIOMA01
+    if study == "GLIOMA01":
+        unique_modalities.append("Histopathology")
+        total_images += 84
 
-    return {}
+    return {
+        "Collection": collection_id,
+        "Aggregate_PatientID": total_patients,
+        "Aggregate_Modality": unique_modalities,
+        "Aggregate_BodyPartExamined": unique_bodyparts,
+        "Aggregate_ImageCount": total_images
+    }

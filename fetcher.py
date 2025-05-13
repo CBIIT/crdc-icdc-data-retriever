@@ -88,4 +88,8 @@ def fetch_graphql(source):
 
 def extract_response_data(source, response_json):
     key = source.get("response_data_key")
-    return response_json.get(key, {}) if key else response_json
+    if not key:
+        return response_json
+    for part in key.split("."):
+        response_json = response_json.get(part, {})
+    return response_json

@@ -22,8 +22,12 @@ def fetch_direct(source):
         response = requests.get(source_url)
         if not response.ok:
             raise RuntimeError(f"Fetch failed: {response.status_code} {response.reason}")
-        data = response.json()
-        return extract_response_data(source, data)
+        data = extract_response_data(source, response.json())
+        if isinstance(data, list) and "filter_prefix" in source and "match_key" in source:
+            filter_prefix = source["filter_prefix"]
+            match_key = source["match_key"]
+            data = [item for item in data if filter_prefix in item.get(match_key, "")]
+        return data
     except requests.exceptions.RequestException as e:
         # specific error logging
         raise RuntimeError(f"Request failed for source {source["name"]}: {e}")

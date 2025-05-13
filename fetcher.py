@@ -18,7 +18,7 @@ def fetch_from_source(source_config):
 def fetch_direct(source):
     # expand to allow for authentication or additional headers, etc.
     try:
-        source_url = f"{source["api_base_url"]}{source["endpoint"]}"
+        source_url = f"{source['api_base_url']}{source['endpoint']}"
         response = requests.get(source_url)
         if not response.ok:
             raise RuntimeError(f"Fetch failed: {response.status_code} {response.reason}")
@@ -30,17 +30,17 @@ def fetch_direct(source):
         return data
     except requests.exceptions.RequestException as e:
         # specific error logging
-        raise RuntimeError(f"Request failed for source {source["name"]}: {e}")
+        raise RuntimeError(f"Request failed for source {source['name']}: {e}")
     except ValueError as e:
         # specific error logging
-        raise RuntimeError(f"Invalid JSON response for source {source["name"]}: {e}")
+        raise RuntimeError(f"Invalid JSON response for source {source['name']}: {e}")
 
 
 def do_discovery_then_fetch(source):
     discovery = source["discovery"]
     match_key = discovery["match_key"]
     filter_prefix = discovery["filter_prefix"]
-    discovery_url = f"{source["api_base_url"]}{discovery["endpoint"]}"
+    discovery_url = f"{source['api_base_url']}{discovery['endpoint']}"
     try:
         # discovery phase
         discovery_res = requests.get(discovery_url)
@@ -64,15 +64,15 @@ def do_discovery_then_fetch(source):
         return fetch_data
     except requests.exceptions.RequestException as e:
         # specific error logging
-        raise RuntimeError(f"Request failed for source {source["name"]}: {e}")
+        raise RuntimeError(f"Request failed for source {source['name']}: {e}")
     except ValueError as e:
         # specific error logging
-        raise RuntimeError(f"Invalid JSON response for source {source["name"]}: {e}")
+        raise RuntimeError(f"Invalid JSON response for source {source['name']}: {e}")
 
 
 def fetch_graphql(source):
     try:
-        source_url = f"{source["api_base_url"]}{source["endpoint"]}"
+        source_url = f"{source['api_base_url']}{source['endpoint']}"
         response = requests.post(url=source_url, json={"query": source["query"]})
         if not response.ok:
             raise RuntimeError(f"Fetch failed: {response.status_code} {response.reason}")
@@ -80,10 +80,10 @@ def fetch_graphql(source):
         return extract_response_data(source, data)
     except requests.exceptions.RequestException as e:
         # specific error logging
-        raise RuntimeError(f"Request failed for source {source["name"]}: {e}")
+        raise RuntimeError(f"Request failed for source {source['name']}: {e}")
     except ValueError as e:
         # specific error logging
-        raise RuntimeError(f"Invalid JSON response for source {source["name"]}: {e}")
+        raise RuntimeError(f"Invalid JSON response for source {source['name']}: {e}")
     
 
 def extract_response_data(source, response_json):

@@ -7,8 +7,7 @@ def post_processor(fn):
     return fn
 
 
-@post_processor
-def transform_idc_description_html(html: str) -> str:
+def transform_html(html: str) -> str:
     # Python version of node.js getIdcCollectionMetadata
     # handle oddly-formatted IDC response HTML
     converter = HTML2Text()
@@ -21,6 +20,13 @@ def transform_idc_description_html(html: str) -> str:
     text = re.sub(r"\s+", " ", text).strip()
 
     return text
+
+
+@post_processor
+def clean_idc_metadata(metadata: dict) -> dict:
+    if "description" in metadata:
+        metadata["description"] = transform_html(metadata["description"])
+    return metadata
 
 
 @post_processor

@@ -2,6 +2,12 @@ import re
 from html2text import HTML2Text
 
 
+def post_processor(fn):
+    fn._is_post_processor = True
+    return fn
+
+
+@post_processor
 def transform_idc_description_html(html: str) -> str:
     # Python version of node.js getIdcCollectionMetadata
     # handle oddly-formatted IDC response HTML
@@ -17,6 +23,7 @@ def transform_idc_description_html(html: str) -> str:
     return text
 
 
+@post_processor
 def aggregate_tcia_series_data(data: list, study: str, collection_id: str) -> dict:
     # Python version of node.js getTciaCollectionMetadata
     total_images = sum(int(i["ImageCount"]) for i in data)

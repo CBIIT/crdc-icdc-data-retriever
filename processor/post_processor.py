@@ -34,5 +34,5 @@ def aggregate_tcia_series_data(data: list, study: str, collection_id: str) -> di
         "Aggregate_PatientID": total_patients,
         "Aggregate_Modality": unique_modalities,
         "Aggregate_BodyPartExamined": unique_bodyparts,
-        "Aggregate_ImageCount": total_images
+        "Aggregate_ImageCount": total_images,
     }

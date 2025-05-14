@@ -13,7 +13,7 @@ sources:
     response_data_key: collections  # optional key
     match_key: collection_id
     filter_prefix: icdc_
-    post_processor: clean_idc_descriptions
+    post_processor: clean_idc_metadata
   - name: TCIA
     type: rest
     api_base_url: https://services.cancerimagingarchive.net/services/v4

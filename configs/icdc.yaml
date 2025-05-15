@@ -9,8 +9,9 @@ sources:
     type: rest
     api_base_url: https://api.imaging.datacommons.cancer.gov/v1
     dataset_base_url: https://portal.imaging.datacommons.cancer.gov/explore/filters/?collection_id={collection_id}
+    dataset_base_url_param: collection_id
     endpoint: /collections
-    response_data_key: collections  # optional key
+    response_data_key: collections
     match_key: collection_id
     filter_prefix: icdc_
     post_processor: clean_idc_metadata
@@ -18,6 +19,7 @@ sources:
     type: rest
     api_base_url: https://services.cancerimagingarchive.net/services/v4
     dataset_base_url: https://nbia.cancerimagingarchive.net/nbia-search/?MinNumberOfStudiesCriteria=1&CollectionCriteria={collection_id}
+    dataset_base_url_param: collection_id
     discovery:
       endpoint: /TCIA/query/getCollectionValues
       match_key: Collection
@@ -25,7 +27,7 @@ sources:
     fetch:
       endpoint_template: /TCIA/query/getSeries?Collection={collection_id}
       key_param: collection_id
-    post_processor: aggregate_tcia_series
+    post_processor: aggregate_tcia_series_data
   - name: ICDC
     type: graphql
     api_base_url: https://caninecommons-dev.cancer.gov

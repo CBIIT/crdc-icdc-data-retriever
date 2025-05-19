@@ -57,12 +57,8 @@ def collect_mappings(
             crdc_mappings.append(
                 {
                     "CRDCLinks": mappings,
-                    "number_of_crdc_nodes": entity.get(
-                        "numberOfCRDCNodes", len({i["repository"] for i in mappings})
-                    ),
-                    "number_of_collections": entity.get(
-                        "numberOfImageCollections", len(mappings)
-                    ),
+                    "number_of_crdc_nodes": len({i["repository"] for i in mappings}),
+                    "number_of_collections": len(mappings),
                     "entity_id": entity.get("clinical_study_designation"),
                 }
             )

@@ -15,6 +15,7 @@ sources:
     match_key: collection_id
     filter_prefix: icdc_
     post_processor: clean_idc_metadata
+    entity_id_key: clinical_study_designation
   - name: TCIA
     type: rest
     api_base_url: https://services.cancerimagingarchive.net/services/v4
@@ -28,6 +29,7 @@ sources:
       endpoint_template: /TCIA/query/getSeries?Collection={collection_id}
       key_param: collection_id
     post_processor: aggregate_tcia_series_data
+    entity_id_key: clinical_study_designation
   - name: ICDC
     type: graphql
     api_base_url: https://caninecommons-dev.cancer.gov
@@ -41,3 +43,4 @@ sources:
             numberOfCRDCNodes
         }
       }
+    entity_id_key: clinical_study_designation

@@ -25,9 +25,12 @@ class ConfigHandler:
             raise ValueError("Missing or invalid 'sources' section in config")
 
         for source in sources:
-            if not all(key in source for key in ("name", "type", "api_base_url")):
+            if not all(
+                key in source
+                for key in ("name", "type", "api_base_url", "entity_id_key")
+            ):
                 raise ValueError(
-                    "Each data source must define a 'name', 'type' and 'api_base_url'"
+                    "Each data source must define a 'name', 'type', 'api_base_url' and 'entity_id_key'"
                 )
 
             if "discovery" not in source and "endpoint" not in source:

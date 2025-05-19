@@ -32,6 +32,7 @@ def map_matches_to_entity(
 
 
 def collect_mappings(
+    source_config,
     entities,
     matched_source_data,
     dataset_base_url,
@@ -41,6 +42,7 @@ def collect_mappings(
     post_processor=None,
 ) -> list:
     crdc_mappings = []
+    entity_id_key = source_config["output"]["entity_id_key"]
 
     for entity in entities:
         mappings = map_matches_to_entity(
@@ -54,12 +56,13 @@ def collect_mappings(
         )
 
         if mappings:
+            entity_id = entity.get(entity_id_key)
             crdc_mappings.append(
                 {
                     "CRDCLinks": mappings,
                     "number_of_crdc_nodes": len({i["repository"] for i in mappings}),
                     "number_of_collections": len(mappings),
-                    "entity_id": entity.get("clinical_study_designation"),
+                    "entity_id": entity_id,
                 }
             )
 

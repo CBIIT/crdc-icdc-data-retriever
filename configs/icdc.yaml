@@ -39,8 +39,6 @@ sources:
       {
         studiesByProgram {
             clinical_study_designation
-            numberOfImageCollections
-            numberOfCRDCNodes
         }
       }
     entity_id_key: clinical_study_designation

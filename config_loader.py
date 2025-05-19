@@ -34,10 +34,8 @@ class ConfigHandler:
                 raise ValueError("Source must define either 'endpoint' or 'discovery'")
 
             if source["type"] == "graphql":
-                if source.get("method", "").lower() != "post" or "query" not in source:
-                    raise ValueError(
-                        "'graphql' sources must have a POST 'method' and a valid 'query'"
-                    )
+                if "query" not in source:
+                    raise ValueError("'graphql' sources must have a valid 'query'")
 
             if "discovery" in source:
                 discovery = source["discovery"]

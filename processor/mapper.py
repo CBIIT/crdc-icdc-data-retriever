@@ -3,6 +3,7 @@ from utils.match_utils import is_fuzzy_match
 
 def map_matches_to_entity(
     entity,
+    source_config,
     matched_source_data,
     dataset_base_url,
     dataset_base_url_param,
@@ -11,12 +12,13 @@ def map_matches_to_entity(
     post_processor=None,
 ) -> list:
     crdc_links = []
-    entity_name = entity.get("clinical_study_designation", "")
+    entity_id_key = source_config["output"]["entity_id_key"]
+    entity_id = entity.get(entity_id_key, "")
 
     for metadata in matched_source_data:
         candidate = metadata.get(match_key, "")
         # log warning if match key not present in metadata
-        if not is_fuzzy_match(entity_name, candidate):
+        if not is_fuzzy_match(entity_id, candidate):
             continue
 
         if post_processor:
@@ -32,8 +34,8 @@ def map_matches_to_entity(
 
 
 def collect_mappings(
-    source_config,
     entities,
+    source_config,
     matched_source_data,
     dataset_base_url,
     dataset_base_url_param,

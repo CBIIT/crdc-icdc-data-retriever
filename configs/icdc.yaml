@@ -4,6 +4,7 @@
 # retry settings
 # target opensearch index (or opensearch connection info)
 project: ICDC
+entity_source: ICDC
 sources:
   - name: IDC
     type: rest

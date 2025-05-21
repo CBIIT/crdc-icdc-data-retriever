@@ -49,6 +49,7 @@ def collect_mappings(
     for entity in entities:
         mappings = map_matches_to_entity(
             entity=entity,
+            source_config=source_config,
             matched_source_data=matched_source_data,
             dataset_base_url=dataset_base_url,
             dataset_base_url_param=dataset_base_url_param,

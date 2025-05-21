@@ -1,16 +1,16 @@
 import requests
 
 
-def fetch_from_source(source_config):
+def fetch_from_source(source):
     # higher level logging messages
     try:
-        if source_config["type"] == "rest":
-            if "discovery" in source_config:
-                return do_discovery_then_fetch(source_config)
+        if source["type"] == "rest":
+            if "discovery" in source:
+                return do_discovery_then_fetch(source)
             else:
-                return fetch_direct(source_config)
-        elif source_config["type"] == "graphql":
-            return fetch_graphql(source_config)
+                return fetch_direct(source)
+        elif source["type"] == "graphql":
+            return fetch_graphql(source)
     except Exception:
         return None
 

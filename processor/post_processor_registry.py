@@ -11,3 +11,10 @@ POST_PROCESSOR_MAP = {
 
 def get_post_processor(name):
     return POST_PROCESSOR_MAP.get(name)
+
+
+def apply_post_processor(fn, metadata, **kwargs):
+    try:
+        return fn(metadata, **kwargs)
+    except TypeError:
+        return fn(metadata)

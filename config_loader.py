@@ -16,14 +16,35 @@ class ConfigHandler:
         return self.config
 
     def validate(self):
-        # minimal validation logic
+        # top-level
         if "project" not in self.config:
             raise ValueError("Missing 'project' key in config")
+
+        if "entity_source" not in self.config:
+            raise ValueError("Missing 'entity_source' key in config")
+
+        if "output" not in self.config or not isinstance(self.config["output"], dict):
+            raise ValueError("Missing or invalid 'output' block in config")
+
+        output = self.config["output"]
+        if output.get("destination").lower() != "opensearch":
+            raise ValueError(
+                "Currently, only 'opensearch' is supported as an output destination"
+            )
+
+        if "config" not in output or not isinstance(output["config"], dict):
+            raise ValueError("Missing or invalid 'config' block in 'output'")
+
+        required_keys = ["host", "index"]
+        for key in required_keys:
+            if key not in output["config"]:
+                raise ValueError(f"Missing required OpenSearch config key: {key}")
 
         sources = self.config.get("sources")
         if not sources or not isinstance(sources, list):
             raise ValueError("Missing or invalid 'sources' section in config")
 
+        # source-level
         for source in sources:
             if not all(
                 key in source

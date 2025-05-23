@@ -43,3 +43,8 @@ sources:
         }
       }
     entity_id_key: clinical_study_designation
+output:
+  destination: opensearch
+  config:
+    host: http://localhost:9200
+    index: external_data

@@ -1,3 +1,4 @@
+from processor.post_processor_registry import apply_post_processor
 from utils.match_utils import is_fuzzy_match
 
 
@@ -21,10 +22,15 @@ def map_matches_to_entity(
         if not is_fuzzy_match(entity_id, candidate):
             continue
 
-        if post_processor:
-            metadata = post_processor(metadata)
-
         match_id = metadata.get(match_key)
+        context = {
+            "entity": entity,
+            "collection_id": match_id,
+        }
+
+        if post_processor:
+            metadata = apply_post_processor(post_processor, metadata, **context)
+
         url = dataset_base_url.format(**{dataset_base_url_param: match_id})
         crdc_links.append(
             {"repository": repository_name, "url": url, "metadata": metadata}

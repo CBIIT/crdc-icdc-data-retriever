@@ -2,7 +2,6 @@
 # HTTP headers/auth tokens
 # query params
 # retry settings
-# target opensearch index (or opensearch connection info)
 project: ICDC
 entity_source: ICDC
 sources:
@@ -48,3 +47,5 @@ output:
   config:
     host: http://localhost:9200
     index: external_data
+    use_ssl: false
+    verify_certs: false

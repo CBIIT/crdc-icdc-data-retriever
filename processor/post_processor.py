@@ -30,10 +30,16 @@ def clean_idc_metadata(metadata: dict) -> dict:
 
 @post_processor
 def aggregate_tcia_series_data(data: list, entity: str, collection_id: str) -> dict:
-    total_images = sum(int(i["ImageCount"]) for i in data)
-    total_patients = len(set([i["PatientID"] for i in data]))
-    unique_modalities = list(set([i["Modality"] for i in data]))
-    unique_bodyparts = list(set([i["BodyPartExamined"] for i in data]))
+    total_images = 0
+    total_patients = set()
+    unique_modalities = set()
+    unique_bodyparts = set()
+
+    for item in data:
+        total_images += item["ImageCount"]
+        total_patients.add(item["PatientID"])
+        unique_modalities.add(item["Modality"])
+        unique_bodyparts.add(item["BodyPartExamined"])
 
     # hardcode inaccessible TCIA data for GLIOMA01
     if entity == "GLIOMA01":
@@ -42,7 +48,7 @@ def aggregate_tcia_series_data(data: list, entity: str, collection_id: str) -> d
 
     return {
         "Collection": collection_id,
-        "Aggregate_PatientID": total_patients,
+        "Aggregate_PatientID": len(total_patients),
         "Aggregate_Modality": unique_modalities,
         "Aggregate_BodyPartExamined": unique_bodyparts,
         "Aggregate_ImageCount": total_images,

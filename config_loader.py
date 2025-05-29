@@ -16,66 +16,99 @@ class ConfigHandler:
         return self.config
 
     def validate(self):
-        # top-level
         if "project" not in self.config:
             raise ValueError("Missing 'project' key in config")
 
         if "entity_source" not in self.config:
             raise ValueError("Missing 'entity_source' key in config")
 
-        if "output" not in self.config or not isinstance(self.config["output"], dict):
-            raise ValueError("Missing or invalid 'output' block in config")
+        ConfigHandler._require_dict_block(self.config, "output", "config")
+        ConfigHandler._validate_output_config(self.config["output"])
 
-        output = self.config["output"]
-        if output.get("destination").lower() != "opensearch":
-            raise ValueError(
-                "Currently, only 'opensearch' is supported as an output destination"
-            )
-
-        if "config" not in output or not isinstance(output["config"], dict):
-            raise ValueError("Missing or invalid 'config' block in 'output'")
-
-        required_keys = ["host", "index"]
-        for key in required_keys:
-            if key not in output["config"]:
-                raise ValueError(f"Missing required OpenSearch config key: {key}")
+        notifications = self.config.get("notifications")
+        if notifications:
+            ConfigHandler._validate_notifications_config(notifications)
 
         sources = self.config.get("sources")
         if not sources or not isinstance(sources, list):
             raise ValueError("Missing or invalid 'sources' section in config")
 
-        # source-level
         for source in sources:
+            ConfigHandler._validate_source_config(source)
+
+    @staticmethod
+    def _validate_output_config(output: dict):
+        if "destination" not in output:
+            raise ValueError("Missing 'destination' key in 'output'")
+
+        destination = output["destination"].lower()
+        if destination != "opensearch":
+            raise ValueError(
+                "Currently, only 'opensearch' is supported as an output destination"
+            )
+
+        ConfigHandler._require_dict_block(output, "config", "output")
+
+        output_config_required_keys = ["host", "index"]
+        for key in output_config_required_keys:
+            if key not in output["config"]:
+                raise ValueError(f"Missing required 'output' config key: {key}")
+
+    @staticmethod
+    def _validate_notifications_config(notifications: dict):
+        if not isinstance(notifications, dict):
+            raise ValueError("Invalid 'notifications' block structure")
+        if "destination" not in notifications:
+            raise ValueError("Missing 'destination' key in 'notifications'")
+
+        destination = notifications["destination"].lower()
+        if destination != "sns":
+            raise ValueError(
+                "Currently, only 'sns' is supported as a notification destination"
+            )
+
+        ConfigHandler._require_dict_block(notifications, "config", "notifications")
+
+        notifications_config_required_keys = ["topic_arn"]
+        for key in notifications_config_required_keys:
+            if key not in notifications["config"]:
+                raise ValueError(f"Missing required 'notifications' config key: {key}")
+
+    @staticmethod
+    def _validate_source_config(source: dict):
+        if not all(
+            key in source for key in ("name", "type", "api_base_url", "entity_id_key")
+        ):
+            raise ValueError(
+                "Each data source must define a 'name', 'type', 'api_base_url' and 'entity_id_key'"
+            )
+        if "discovery" not in source and "endpoint" not in source:
+            raise ValueError("Source must define either 'endpoint' or 'discovery'")
+
+        source_type = source["type"].lower()
+        if source_type == "graphql":
+            if "query" not in source:
+                raise ValueError("'graphql' sources must have a valid 'query'")
+
+        if "discovery" in source:
+            discovery = source["discovery"]
+            fetch = source.get("fetch", {})
             if not all(
-                key in source
-                for key in ("name", "type", "api_base_url", "entity_id_key")
+                key in discovery for key in ("endpoint", "match_key", "filter_prefix")
             ):
                 raise ValueError(
-                    "Each data source must define a 'name', 'type', 'api_base_url' and 'entity_id_key'"
+                    "'discovery' property requires defined 'endpoint', 'match_key' and 'filter_prefix'"
+                )
+            if not fetch:
+                raise ValueError(
+                    "source using 'discovery' must define a 'fetch' section with 'endpoint_template' and 'key_param'"
+                )
+            if not all(key in fetch for key in ("endpoint_template", "key_param")):
+                raise ValueError(
+                    "'fetch' property requires defined 'endpoint_template' and 'key_param'"
                 )
 
-            if "discovery" not in source and "endpoint" not in source:
-                raise ValueError("Source must define either 'endpoint' or 'discovery'")
-
-            if source["type"] == "graphql":
-                if "query" not in source:
-                    raise ValueError("'graphql' sources must have a valid 'query'")
-
-            if "discovery" in source:
-                discovery = source["discovery"]
-                fetch = source.get("fetch", {})
-                if not all(
-                    key in discovery
-                    for key in ("endpoint", "match_key", "filter_prefix")
-                ):
-                    raise ValueError(
-                        "'discovery' property requires defined 'endpoint', 'match_key' and 'filter_prefix'"
-                    )
-                if not fetch:
-                    raise ValueError(
-                        "source using 'discovery' must define a 'fetch' section with 'endpoint_template' and 'key_param'"
-                    )
-                if not all(key in fetch for key in ("endpoint_template", "key_param")):
-                    raise ValueError(
-                        "'fetch' property requires defined 'endpoint_template' and 'key_param'"
-                    )
+    @staticmethod
+    def _require_dict_block(parent: dict, key: str, context: str):
+        if key not in parent or not isinstance(parent[key], dict):
+            raise ValueError(f"Missing or invalid '{key}' block in '{context}'")

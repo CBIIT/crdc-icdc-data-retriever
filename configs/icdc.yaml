@@ -1,7 +1,3 @@
-# other params to potentially include:
-# HTTP headers/auth tokens
-# query params
-# retry settings
 project: ICDC
 entity_source: ICDC
 sources:
@@ -49,3 +45,7 @@ output:
     index: external_data
     use_ssl: false
     verify_certs: false
+notifications:
+  destination: sns
+  config:
+    topic_arn: ${SNS_TOPIC_ARN}

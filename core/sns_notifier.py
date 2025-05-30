@@ -16,7 +16,7 @@ class SNSNotifier:
 
     def notify(self, subject: str, message: str) -> bool:
         try:
-            response = self.client.publish(
+            _ = self.client.publish(
                 TopicArn=self.topic_arn,
                 Message=message,
                 Subject=subject,

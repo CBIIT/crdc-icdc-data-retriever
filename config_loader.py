@@ -1,5 +1,9 @@
+import os
+import re
 import yaml
 from pathlib import Path
+
+ENV_VAR_PATTERN = re.compile(r"\${([^}^{:\-]+)(:-([^}]+))?}")
 
 
 class ConfigHandler:
@@ -9,7 +13,7 @@ class ConfigHandler:
         if not self.config_path.exists():
             raise FileNotFoundError(f"Config file not found: {config_path}")
 
-    def load(self):
+    def basic_load(self):
         with open(self.config_path, "r") as file:
             self.config = yaml.safe_load(file)
         self.validate()
@@ -112,3 +116,30 @@ class ConfigHandler:
     def _require_dict_block(parent: dict, key: str, context: str):
         if key not in parent or not isinstance(parent[key], dict):
             raise ValueError(f"Missing or invalid '{key}' block in '{context}'")
+
+    @staticmethod
+    def _env_var_constructor(loader, node):
+        value = loader.construct_scalar(node)
+        match = ENV_VAR_PATTERN.fullmatch(value)
+        if match:
+            env_var = match.group(1)
+            fallback = match.group(3)
+            return os.getenv(env_var, fallback or "")
+        return value
+
+    @classmethod
+    def load_config_with_env_vars(cls, config_path: str) -> "ConfigHandler":
+        # custom YAML loader class
+        class EnvVarLoader(yaml.SafeLoader):
+            pass
+
+        EnvVarLoader.add_implicit_resolver("!envvar", ENV_VAR_PATTERN, None)
+        EnvVarLoader.add_constructor("!envvar", cls._env_var_constructor)
+
+        with open(config_path, "r") as file:
+            config_data = yaml.load(file, Loader=EnvVarLoader)
+
+        config_handler = cls(config_data)
+        config_handler.validate()
+
+        return config_handler

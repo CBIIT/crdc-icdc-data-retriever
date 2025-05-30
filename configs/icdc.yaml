@@ -49,3 +49,4 @@ notifications:
   destination: sns
   config:
     topic_arn: ${SNS_TOPIC_ARN}
+    region: ${SNS_REGION:-us-east-1}

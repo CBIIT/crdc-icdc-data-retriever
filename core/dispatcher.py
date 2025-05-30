@@ -1,4 +1,4 @@
-from fetcher import fetch_from_source
+from core.fetcher import fetch_from_source
 from processor.mapper import collect_mappings
 from processor.post_processor_registry import get_post_processor
 

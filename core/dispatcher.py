@@ -1,3 +1,5 @@
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 from core.fetcher import fetch_from_source
 from processor.mapper import collect_mappings
 from processor.post_processor_registry import get_post_processor
@@ -14,6 +16,26 @@ def run_dispatcher(config):
 
 def fetch_all(sources: list) -> dict:
     return {source["name"]: fetch_from_source(source) for source in sources}
+
+
+def fetch_all_parallel(sources: list, max_workers: int = 8) -> dict:
+    results = {}
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_source = {
+            executor.submit(fetch_from_source, source): source for source in sources
+        }
+
+    for future in as_completed(future_to_source):
+        source = future_to_source[future]
+        name = source.get("name", "")
+        try:
+            data = future.result()
+            results[name] = data
+        except Exception as e:
+            results[name] = None
+
+    return results
 
 
 def match_all(entities, sources, fetched_data, entity_source_name) -> list:

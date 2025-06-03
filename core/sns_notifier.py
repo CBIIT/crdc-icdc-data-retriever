@@ -1,5 +1,8 @@
+import logging
 import os
 import boto3
+
+logger = logging.getLogger(__name__)
 
 
 class SNSNotifier:
@@ -7,22 +10,30 @@ class SNSNotifier:
         self.topic_arn = topic_arn
         self.region = region
 
+        aws_access_key_id = os.getenv("AWS_ACCESS_KEY_ID")
+        aws_secret_access_key = os.getenv("AWS_SECRET_ACCESS_KEY")
+        if not aws_access_key_id or not aws_secret_access_key:
+            raise EnvironmentError("Missing AWS credentials in environment variables")
+
+        logger.debug(f"Initializing SNS client for topic {self.topic_arn}")
+
         self.client = boto3.client(
             "sns",
             region_name=self.region,
-            aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
-            aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key,
         )
 
     def notify(self, subject: str, message: str) -> bool:
         try:
-            _ = self.client.publish(
+            response = self.client.publish(
                 TopicArn=self.topic_arn,
                 Message=message,
                 Subject=subject,
             )
-            # logging
+            logger.info(f"Notification published to SNS topic {self.topic_arn}")
+            logger.debug(f"SNS publish response: {response}")
             return True
         except Exception as e:
-            # logging
+            logger.error(f"Failed to publish SNS notification: {e}")
             return False

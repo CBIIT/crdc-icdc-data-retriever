@@ -1,17 +1,19 @@
+import logging
 import os
 import re
 import yaml
 from pathlib import Path
 
 ENV_VAR_PATTERN = re.compile(r"\${([^}^{:\-]+)(:-([^}]+))?}")
+logger = logging.getLogger(__name__)
 
 
 class ConfigHandler:
-    def __init__(self, config_path: str):
-        self.config_path = Path(config_path)
-        self.config = None
-        if not self.config_path.exists():
-            raise FileNotFoundError(f"Config file not found: {config_path}")
+    def __init__(self, config_data: dict):
+        if not isinstance(config_data, dict):
+            raise TypeError("Config data must be a dictionary!")
+        self.config = config_data
+        logger.debug("ConfigHandler instance initialized with supplied config data.")
 
     def basic_load(self):
         with open(self.config_path, "r") as file:
@@ -20,6 +22,8 @@ class ConfigHandler:
         return self.config
 
     def validate(self):
+        logger.info("Validating configuration file...")
+
         if "project" not in self.config:
             raise ValueError("Missing 'project' key in config")
 
@@ -40,8 +44,12 @@ class ConfigHandler:
         for source in sources:
             ConfigHandler._validate_source_config(source)
 
+        logger.info("Configuration successfully validated!")
+
     @staticmethod
     def _validate_output_config(output: dict):
+        logger.debug("Validating output configuration block")
+
         if "destination" not in output:
             raise ValueError("Missing 'destination' key in 'output'")
 
@@ -60,6 +68,8 @@ class ConfigHandler:
 
     @staticmethod
     def _validate_notifications_config(notifications: dict):
+        logger.debug("Validating notifications configuration block")
+
         if not isinstance(notifications, dict):
             raise ValueError("Invalid 'notifications' block structure")
         if "destination" not in notifications:
@@ -80,6 +90,8 @@ class ConfigHandler:
 
     @staticmethod
     def _validate_source_config(source: dict):
+        logger.debug("Validating sources configuration block")
+
         if not all(
             key in source for key in ("name", "type", "api_base_url", "entity_id_key")
         ):
@@ -124,12 +136,21 @@ class ConfigHandler:
         if match:
             env_var = match.group(1)
             fallback = match.group(3)
-            return os.getenv(env_var, fallback or "")
+            env_value = os.getenv(env_var, fallback or "")
+            if not os.getenv(env_var):
+                logger.warning(
+                    f"Environment variable '{env_var}' not found; using fallback '{fallback}'"
+                )
+            else:
+                logger.debug(f"Substituting environment variable: {env_var}")
+            return env_value
         return value
 
     @classmethod
     def load_config_with_env_vars(cls, config_path: str) -> "ConfigHandler":
-        # custom YAML loader class
+        logger.info(f"Loading config file: {config_path}")
+
+        # custom YAML loader
         class EnvVarLoader(yaml.SafeLoader):
             pass
 
@@ -138,6 +159,8 @@ class ConfigHandler:
 
         with open(config_path, "r") as file:
             config_data = yaml.load(file, Loader=EnvVarLoader)
+
+        logger.info("Config file successfully loaded!")
 
         config_handler = cls(config_data)
         config_handler.validate()

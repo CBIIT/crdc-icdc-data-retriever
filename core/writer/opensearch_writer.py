@@ -1,7 +1,10 @@
+import logging
 import os
 from opensearchpy import OpenSearch
 from opensearchpy.exceptions import OpenSearchException
 from opensearchpy.helpers import bulk
+
+logger = logging.getLogger(__name__)
 
 
 class OpenSearchWriter:
@@ -25,19 +28,35 @@ class OpenSearchWriter:
         )
 
         if not self.client.ping():
+            logger.error(f"Failed to connect to OpenSearch host: {self.host}")
             raise ConnectionError(f"Failed to connect to OpenSearch host: {self.host}")
+
+        logger.info(f"Connected to OpenSearch host: {self.host}")
 
     def write_documents(self, doc, doc_id=None):
         try:
             response = self.client.index(index=self.index, id=doc_id, body=doc)
+            if response.get("result") in {"created", "updated"}:
+                logger.info(
+                    f"Document {response.get('_id')} successfully {response['result']} in index '{self.index}'"
+                )
+            else:
+                logger.warning(
+                    f"Unexpected indexing result for document {response.get('_id')}: {response.get('result')}"
+                )
             return response
         except OpenSearchException as e:
+            logger.error(f"Failed to write documents to index {self.index}: {e}")
             raise RuntimeError(f"Failed to write document to index '{self.index}': {e}")
 
     def bulk_write_documents(self, documents):
         try:
             actions = [{"_index": self.index, "_source": doc} for doc in documents]
             success, _ = bulk(self.client, actions)
+            logger.info(
+                f"Wrote {success} out of {len(documents)} documents to index {self.index}"
+            )
             return success
         except OpenSearchException as e:
+            logger.error(f"Failed to write documents to index {self.index}: {e}")
             raise RuntimeError(f"Failed to perform bulk write to OpenSearch: {e}")

@@ -44,11 +44,18 @@ def fetch_from_source(source):
 
 
 def fetch_direct(source):
-    # expand to allow for authentication or additional headers, etc.
+    source_name = source.get("name", "<unknown>")
+
+    logger.info(f"Starting direct fetch for source: {source_name}")
+
     try:
         source_url = f"{source['api_base_url']}{source['endpoint']}"
+        logger.debug(f"Request URL: {source_url}")
         response = requests.get(source_url)
         if not response.ok:
+            logger.error(
+                f"Direct fetch failed for source '{source_name}': {response.status_code} {response.reason}"
+            )
             raise RuntimeError(
                 f"Fetch failed: {response.status_code} {response.reason}"
             )
@@ -58,16 +65,20 @@ def fetch_direct(source):
             and "filter_prefix" in source
             and "match_key" in source
         ):
+            logger.debug(
+                f"Filtering fetched data for prefix '{filter_prefix}' on key '{match_key}'"
+            )
             filter_prefix = source["filter_prefix"]
             match_key = source["match_key"]
             data = [item for item in data if filter_prefix in item.get(match_key, "")]
+        logger.info(f"Fetched {len(data)} records from source: {source_name}")
         return data
     except requests.exceptions.RequestException as e:
-        # specific error logging
-        raise RuntimeError(f"Request failed for source {source['name']}: {e}")
+        logger.error(f"RequestException for source {source_name}: {e}")
+        raise RuntimeError(f"Request failed for source {source_name}: {e}")
     except ValueError as e:
-        # specific error logging
-        raise RuntimeError(f"Invalid JSON response for source {source['name']}: {e}")
+        logger.error(f"Invalid JSON response for source {source_name}: {e}")
+        raise RuntimeError(f"Invalid JSON response for source {source_name}: {e}")
 
 
 def do_discovery_then_fetch(source):
@@ -75,20 +86,27 @@ def do_discovery_then_fetch(source):
     match_key = discovery["match_key"]
     filter_prefix = discovery["filter_prefix"]
     discovery_url = f"{source['api_base_url']}{discovery['endpoint']}"
+
     try:
-        # discovery phase
+        logger.debug(f"Starting fetch from discovery URL: {discovery_url}")
         discovery_res = requests.get(discovery_url)
         if not discovery_res.ok:
+            logger.error(
+                f"Discovery fetch failed for source '{source['name']}': {discovery_res.status_code} {discovery_res.reason}"
+            )
             raise RuntimeError(
                 f"Fetch failed: {discovery_res.status_code} {discovery_res.reason}"
             )
         discovery_data = extract_response_data(source, discovery_res.json())
+        logger.debug(
+            f"Filtering fetched data for prefix '{filter_prefix}' on key '{match_key}'"
+        )
         filtered_discovery_data = [
             item[match_key]
             for item in discovery_data
             if filter_prefix in item[match_key]
         ]
-        # fetch phase
+        logger.debug("Starting fetch phase...")
         fetch_data = []
         for match in filtered_discovery_data:
             try:
@@ -97,34 +115,53 @@ def do_discovery_then_fetch(source):
                     **{param: match}
                 )
             except KeyError as e:
+                logger.error(f"Missing key in 'endpoint_template': {e}")
                 raise ValueError(f"Missing key in 'endpoint_template': {e}")
             res = requests.get(fetch_url)
+            if not res.ok:
+                logger.error(
+                    f"Fetch phase failed for {fetch_url}: {res.status_code} {res.reason}"
+                )
+                raise RuntimeError(f"Fetch failed: {res.status_code} {res.reason}")
             data = extract_response_data(source, res.json())
+            logger.debug(
+                f"Successfully fetched data for match '{match}' from URL: {fetch_url}"
+            )
             fetch_data.append(data)
+        logger.info(
+            f"Fetched {len(fetch_data)} batches of data from source: {source['name']}"
+        )
         return fetch_data
     except requests.exceptions.RequestException as e:
-        # specific error logging
+        logger.error(f"RequestException for source {source['name']}: {e}")
         raise RuntimeError(f"Request failed for source {source['name']}: {e}")
     except ValueError as e:
-        # specific error logging
+        logger.error(f"Invalid JSON response for source {source['name']}: {e}")
         raise RuntimeError(f"Invalid JSON response for source {source['name']}: {e}")
 
 
 def fetch_graphql(source):
+    logger.info(f"Starting GraphQL fetch for source: {source['name']}")
+
     try:
         source_url = f"{source['api_base_url']}{source['endpoint']}"
+        logger.debug(f"GraphQL fetch URL: {source_url}")
         response = requests.post(url=source_url, json={"query": source["query"]})
         if not response.ok:
+            logger.error(
+                f"GraphQL fetch failed for {source_url}: {response.status_code} {response.reason}"
+            )
             raise RuntimeError(
-                f"Fetch failed: {response.status_code} {response.reason}"
+                f"GraphQL fetch failed: {response.status_code} {response.reason}"
             )
         data = response.json()
+        logger.info(f"GraphQL fetch successful for source: {source['name']}")
         return extract_response_data(source, data)
     except requests.exceptions.RequestException as e:
-        # specific error logging
+        logger.error(f"RequestException for source {source['name']}: {e}")
         raise RuntimeError(f"Request failed for source {source['name']}: {e}")
     except ValueError as e:
-        # specific error logging
+        logger.error(f"Invalid JSON response for source {source['name']}: {e}")
         raise RuntimeError(f"Invalid JSON response for source {source['name']}: {e}")
 
 

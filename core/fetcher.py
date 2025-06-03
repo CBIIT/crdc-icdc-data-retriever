@@ -1,17 +1,45 @@
+import logging
 import requests
 
 
+logger = logging.getLogger(__name__)
+
+
 def fetch_from_source(source):
-    # higher level logging messages
+    source_name = source.get("name", "<unknown>")
+    source_type = source.get("type", "<unknown>")
+
+    logger.info(f"Starting fetch from source: {source_name} (type: {source_type})")
+
     try:
-        if source["type"] == "rest":
+        if source_type == "rest":
             if "discovery" in source:
-                return do_discovery_then_fetch(source)
+                logger.debug(f"Using two-part fetch for source: {source_name}")
+                data = do_discovery_then_fetch(source)
             else:
-                return fetch_direct(source)
+                logger.debug(f"Using direct fetch for source: {source_name}")
+                data = fetch_direct(source)
         elif source["type"] == "graphql":
-            return fetch_graphql(source)
-    except Exception:
+            logger.debug(f"Using GraphQL fetch for source: {source_name}")
+            data = fetch_graphql(source)
+        else:
+            logger.warning(
+                f"Unknown source type '{source_type}' for source: {source_name}"
+            )
+            return None
+
+        if data is None:
+            logger.warning(f"No data returned from source: {source_name}")
+        else:
+            logger.info(
+                f"Successfully fetched data from source: {source_name} (records: {len(data) if isinstance(data, list) else 'n/a'})"
+            )
+        return data
+    except Exception as e:
+        logger.error(
+            f"Failed to fetch data from source: {source_name}. Error: {e}",
+            exc_info=True,
+        )
         return None
 
 

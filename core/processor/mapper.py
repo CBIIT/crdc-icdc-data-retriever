@@ -1,5 +1,8 @@
+import logging
 from processor.post_processor_registry import apply_post_processor
 from utils.match_utils import is_fuzzy_match
+
+logger = logging.getLogger(__name__)
 
 
 def map_matches_to_entity(
@@ -18,8 +21,12 @@ def map_matches_to_entity(
 
     for metadata in matched_source_data:
         candidate = metadata.get(match_key, "")
-        # log warning if match key not present in metadata
+        if not candidate:
+            logger.warning(f"Match key '{match_key}' not present in metadata.")
+            continue
+
         if not is_fuzzy_match(entity_id, candidate):
+            logger.debug(f"Entity '{entity_id}' did not match candidate '{candidate}'")
             continue
 
         match_id = metadata.get(match_key)
@@ -30,11 +37,14 @@ def map_matches_to_entity(
 
         if post_processor:
             metadata = apply_post_processor(post_processor, metadata, **context)
+            logger.info(f"Applied post-processor: {post_processor.__name__}")
 
         url = dataset_base_url.format(**{dataset_base_url_param: match_id})
         crdc_links.append(
             {"repository": repository_name, "url": url, "metadata": metadata}
         )
+
+    logger.debug(f"{len(crdc_links)} links mapped for entity '{entity_id}'")
 
     return crdc_links
 
@@ -73,6 +83,11 @@ def collect_mappings(
                     "number_of_collections": len(mappings),
                     "entity_id": entity_id,
                 }
+            )
+            logger.info(f"Mapped {len(mappings)} collections to entity '{entity_id}'")
+        else:
+            logger.debug(
+                f"No mappings found for entity '{entity.get(entity_id_key, "<unknown>")}'"
             )
 
     return crdc_mappings

@@ -1,8 +1,8 @@
 import logging
 import os
 import re
+
 import yaml
-from pathlib import Path
 
 ENV_VAR_PATTERN = re.compile(r"\${([^}^{:\-]+)(:-([^}]+))?}")
 logger = logging.getLogger(__name__)

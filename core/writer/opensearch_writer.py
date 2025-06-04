@@ -1,5 +1,6 @@
 import logging
 import os
+
 from opensearchpy import OpenSearch
 from opensearchpy.exceptions import OpenSearchException
 from opensearchpy.helpers import bulk

@@ -1,6 +1,6 @@
 import inspect
-import processor.post_processor as post_processor
 
+import processor.post_processor as post_processor
 
 POST_PROCESSOR_MAP = {
     name: fn

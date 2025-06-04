@@ -1,5 +1,8 @@
+import logging
 import re
 from html2text import HTML2Text
+
+logger = logging.getLogger(__name__)
 
 
 def post_processor(fn):
@@ -25,6 +28,9 @@ def transform_html(html: str) -> str:
 def clean_idc_metadata(metadata: dict) -> dict:
     if "description" in metadata:
         metadata["description"] = transform_html(metadata["description"])
+        logger.info("Transformed HTML in 'description' field of metadata")
+    else:
+        logger.warning("'description' key not found in metadata.")
     return metadata
 
 
@@ -45,6 +51,13 @@ def aggregate_tcia_series_data(data: list, entity: str, collection_id: str) -> d
     if entity == "GLIOMA01":
         unique_modalities.append("Histopathology")
         total_images += 84
+        logger.info(f"Hardcoded TCIA data for GLIOMA01 entity added to totals.")
+
+    logger.info(
+        f"Completed aggregation of TCIA series data for collection '{collection_id}': "
+        f"{len(total_patients)} patients, {total_images} images, "
+        f"modalities: {sorted(unique_modalities)}, body parts: {sorted(unique_bodyparts)}"
+    )
 
     return {
         "Collection": collection_id,

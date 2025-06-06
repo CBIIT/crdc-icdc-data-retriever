@@ -8,13 +8,13 @@ from processor.post_processor_registry import get_post_processor
 logger = logging.getLogger(__name__)
 
 
-def run_dispatcher(config):
+def run_dispatcher(config, parallel: bool = False):
     logger.info("Starting dispatcher run...")
     entity_source_name = config["entity_source_name"]
     sources = config["sources"]
 
     logger.info("Fetching all source data...")
-    fetched_data = fetch_all(sources)
+    fetched_data = fetch_all_parallel(sources) if parallel else fetch_all(sources)
     logger.info("Fetching complete - beginning entity matching...")
 
     entities = fetched_data[entity_source_name]

@@ -52,7 +52,7 @@ def aggregate_tcia_series_data(data: list, entity: str, collection_id: str) -> d
     if entity == "GLIOMA01":
         unique_modalities.append("Histopathology")
         total_images += 84
-        logger.info(f"Hardcoded TCIA data for GLIOMA01 entity added to totals.")
+        logger.info("Hardcoded TCIA data for GLIOMA01 entity added to totals.")
 
     logger.info(
         f"Completed aggregation of TCIA series data for collection '{collection_id}': "

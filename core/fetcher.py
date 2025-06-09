@@ -64,11 +64,11 @@ def fetch_direct(source):
             and "filter_prefix" in source
             and "match_key" in source
         ):
+            filter_prefix = source["filter_prefix"]
+            match_key = source["match_key"]
             logger.debug(
                 f"Filtering fetched data for prefix '{filter_prefix}' on key '{match_key}'"
             )
-            filter_prefix = source["filter_prefix"]
-            match_key = source["match_key"]
             data = [item for item in data if filter_prefix in item.get(match_key, "")]
         logger.info(f"Fetched {len(data)} records from source: {source_name}")
         return data

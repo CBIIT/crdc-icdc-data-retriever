@@ -17,7 +17,7 @@ def map_matches_to_entity(
     post_processor=None,
 ) -> list:
     crdc_links = []
-    entity_id_key = source_config["output"]["entity_id_key"]
+    entity_id_key = source_config["entity_id_key"]
     entity_id = entity.get(entity_id_key, "")
 
     for metadata in matched_source_data:
@@ -61,7 +61,7 @@ def collect_mappings(
     post_processor=None,
 ) -> list:
     crdc_mappings = []
-    entity_id_key = source_config["output"]["entity_id_key"]
+    entity_id_key = source_config["entity_id_key"]
 
     for entity in entities:
         mappings = map_matches_to_entity(

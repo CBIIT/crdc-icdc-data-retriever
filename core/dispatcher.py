@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 def run_dispatcher(config, parallel: bool = False):
     logger.info("Starting dispatcher run...")
-    entity_source_name = config["entity_source_name"]
+    entity_source_name = config["entity_source"]
     sources = config["sources"]
 
     logger.info("Fetching all source data...")

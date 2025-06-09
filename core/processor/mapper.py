@@ -1,6 +1,6 @@
 import logging
 
-from processor.post_processor_registry import apply_post_processor
+from core.processor.post_processor_registry import apply_post_processor
 from utils.match_utils import is_fuzzy_match
 
 logger = logging.getLogger(__name__)

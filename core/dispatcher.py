@@ -2,8 +2,8 @@ import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from core.fetcher import fetch_from_source
-from processor.mapper import collect_mappings
-from processor.post_processor_registry import get_post_processor
+from core.processor.mapper import collect_mappings
+from core.processor.post_processor_registry import get_post_processor
 
 logger = logging.getLogger(__name__)
 

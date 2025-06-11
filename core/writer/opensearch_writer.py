@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 
@@ -11,10 +12,11 @@ logger = logging.getLogger(__name__)
 class OpenSearchWriter:
 
     def __init__(self, config: dict):
-        self.index = config["index"]
-        self.host = config["host"]
-        self.use_ssl = config.get("use_ssl", False)
-        self.verify_certs = config.get("verify_certs", False)
+        output_config = config.get("output", {}).get("config", {})
+        self.index = output_config["index"]
+        self.host = output_config["host"]
+        self.use_ssl = output_config.get("use_ssl", False)
+        self.verify_certs = output_config.get("verify_certs", False)
 
         self.username = os.getenv("OPENSEARCH_USERNAME")
         self.password = os.getenv("OPENSEARCH_PASSWORD")
@@ -52,6 +54,7 @@ class OpenSearchWriter:
 
     def bulk_write_documents(self, documents):
         try:
+            documents = OpenSearchWriter._ensure_json_serializable(documents)
             actions = [{"_index": self.index, "_source": doc} for doc in documents]
             success, _ = bulk(self.client, actions)
             logger.info(
@@ -61,3 +64,14 @@ class OpenSearchWriter:
         except OpenSearchException as e:
             logger.error(f"Failed to write documents to index {self.index}: {e}")
             raise RuntimeError(f"Failed to perform bulk write to OpenSearch: {e}")
+
+    @staticmethod
+    def _ensure_json_serializable(documents):
+        serializable_docs = []
+        for doc in documents:
+            try:
+                json.dumps(doc)
+                serializable_docs.append(doc)
+            except (TypeError, ValueError) as e:
+                logger.warning(f"Skipping unserializable document: {e}")
+        return serializable_docs

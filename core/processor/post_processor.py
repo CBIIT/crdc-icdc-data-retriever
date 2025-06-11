@@ -36,7 +36,9 @@ def clean_idc_metadata(metadata: dict) -> dict:
 
 
 @post_processor
-def aggregate_tcia_series_data(data: list, entity: str, collection_id: str) -> dict:
+def aggregate_tcia_series_data(
+    data: list, entity: str, collection_id: str, entity_id_key: str
+) -> dict:
     total_images = 0
     total_patients = set()
     unique_modalities = set()
@@ -49,8 +51,9 @@ def aggregate_tcia_series_data(data: list, entity: str, collection_id: str) -> d
         unique_bodyparts.add(item["BodyPartExamined"])
 
     # hardcode inaccessible TCIA data for GLIOMA01
-    if entity == "GLIOMA01":
-        unique_modalities.append("Histopathology")
+    entity_id = entity.get(entity_id_key)
+    if entity_id == "GLIOMA01":
+        unique_modalities.add("Histopathology")
         total_images += 84
         logger.info("Hardcoded TCIA data for GLIOMA01 entity added to totals.")
 
@@ -63,7 +66,7 @@ def aggregate_tcia_series_data(data: list, entity: str, collection_id: str) -> d
     return {
         "Collection": collection_id,
         "Aggregate_PatientID": len(total_patients),
-        "Aggregate_Modality": unique_modalities,
-        "Aggregate_BodyPartExamined": unique_bodyparts,
+        "Aggregate_Modality": list(unique_modalities),
+        "Aggregate_BodyPartExamined": list(unique_bodyparts),
         "Aggregate_ImageCount": total_images,
     }

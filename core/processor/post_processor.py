@@ -26,13 +26,14 @@ def transform_html(html: str) -> str:
 
 
 @post_processor
-def clean_idc_metadata(metadata: dict) -> dict:
-    if "description" in metadata:
-        metadata["description"] = transform_html(metadata["description"])
-        logger.info("Transformed HTML in 'description' field of metadata")
-    else:
-        logger.warning("'description' key not found in metadata.")
-    return metadata
+def clean_idc_metadata(metadata_list: list) -> list:
+    for metadata in metadata_list:
+        if "description" in metadata:
+            metadata["description"] = transform_html(metadata["description"])
+            logger.info("Transformed HTML in 'description' field of metadata")
+        else:
+            logger.warning("'description' key not found in metadata.")
+    return metadata_list
 
 
 @post_processor

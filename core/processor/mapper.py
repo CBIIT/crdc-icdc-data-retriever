@@ -85,10 +85,8 @@ def collect_mappings(
             entity_id = entity.get(entity_id_key)
             crdc_mappings.append(
                 {
-                    "CRDCLinks": mappings,
-                    "number_of_crdc_nodes": len({i["repository"] for i in mappings}),
-                    "number_of_collections": len(mappings),
                     "entity_id": entity_id,
+                    "CRDCLinks": mappings,
                 }
             )
             logger.info(f"Mapped {len(mappings)} collections to entity '{entity_id}'")

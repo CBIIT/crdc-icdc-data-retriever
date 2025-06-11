@@ -68,15 +68,16 @@ def main():
     except Exception as e:
         logger.exception(f"Data Retriever Service pipeline failed: {e}")
 
-    # if config["notifications"] and not args.dry_run:
-    #     topic_arn = config["notifications"]["topic_arn"]
-    #     region = config["notifications"]["region"]
+    if config.get("notifications") and not args.dry_run:
+        # topic_arn = config["notifications"]["topic_arn"]
+        # region = config["notifications"]["region"]
 
-    #     notifier = SNSNotifier(topic_arn=topic_arn, region=region)
-    #     message = build_notification_message(
-    #         success=success, mappings=mappings, project=project
-    #     )
-    #     notifier.notify(subject="Data Retriever Service", message=message)
+        # notifier = SNSNotifier(topic_arn=topic_arn, region=region)
+        # message = build_notification_message(
+        #     success=success, mappings=mappings, project=project
+        # )
+        # notifier.notify(subject="Data Retriever Service", message=message)
+        logger.warning("SNS notifications are currently unavailable.")
 
 
 if __name__ == "__main__":

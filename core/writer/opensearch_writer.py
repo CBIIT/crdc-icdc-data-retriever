@@ -12,11 +12,12 @@ logger = logging.getLogger(__name__)
 class OpenSearchWriter:
 
     def __init__(self, config: dict):
-        output_config = config.get("output", {}).get("config", {})
-        self.index = output_config["index"]
-        self.host = output_config["host"]
-        self.use_ssl = output_config.get("use_ssl", False)
-        self.verify_certs = output_config.get("verify_certs", False)
+        self.config = config
+        self.output_config = self.config.get("output", {}).get("config", {})
+        self.index = self.output_config["index"]
+        self.host = self.output_config["host"]
+        self.use_ssl = self.output_config.get("use_ssl", False)
+        self.verify_certs = self.output_config.get("verify_certs", False)
 
         self.username = os.getenv("OPENSEARCH_USERNAME")
         self.password = os.getenv("OPENSEARCH_PASSWORD")
@@ -55,12 +56,39 @@ class OpenSearchWriter:
     def bulk_write_documents(self, documents):
         try:
             documents = OpenSearchWriter._ensure_json_serializable(documents)
-            actions = [{"_index": self.index, "_source": doc} for doc in documents]
+            project = self.config.get("project")
+            actions = []
+
+            for doc in documents:
+                entity_id = doc.get("entity_id")
+                source_name = doc.get("CRDCLinks", [{}])[0].get("repository")
+
+                if not entity_id or not source_name:
+                    logger.warning(
+                        "Skipping document due to missing repository or entity ID."
+                    )
+                    continue
+
+                doc_id = f"{project}_{source_name}_{entity_id}"
+                actions.append(
+                    {
+                        "_index": self.index,
+                        "_id": doc_id,
+                        "_source": doc,
+                    }
+                )
+
+            skipped = len(documents) - len(actions)
+            if skipped:
+                logger.warning(
+                    f"Skipped {skipped} documents due to missing required fields."
+                )
+
             success, _ = bulk(self.client, actions)
             logger.info(
                 f"Wrote {success} out of {len(documents)} documents to index {self.index}"
             )
-            return success
+            return {"success": success, "attempted": len(actions)}
         except OpenSearchException as e:
             logger.error(f"Failed to write documents to index {self.index}: {e}")
             raise RuntimeError(f"Failed to perform bulk write to OpenSearch: {e}")

@@ -1,6 +1,7 @@
 import logging
 
 from core.processor.post_processor_registry import apply_post_processor
+from utils.mapping_utils import normalize_metadata_groups, extract_first_valid_match
 from utils.match_utils import is_fuzzy_match
 
 logger = logging.getLogger(__name__)
@@ -20,8 +21,10 @@ def map_matches_to_entity(
     entity_id_key = source_config["entity_id_key"]
     entity_id = entity.get(entity_id_key, "")
 
-    for metadata in matched_source_data:
-        candidate = metadata.get(match_key, "")
+    for metadata in normalize_metadata_groups(matched_source_data):
+        candidate = extract_first_valid_match(
+            metadata_group=metadata, match_key=match_key
+        )
         if not candidate:
             logger.warning(f"Match key '{match_key}' not present in metadata.")
             continue
@@ -30,10 +33,13 @@ def map_matches_to_entity(
             logger.debug(f"Entity '{entity_id}' did not match candidate '{candidate}'")
             continue
 
-        match_id = metadata.get(match_key)
+        match_id = extract_first_valid_match(
+            metadata_group=metadata, match_key=match_key
+        )
         context = {
             "entity": entity,
             "collection_id": match_id,
+            "entity_id_key": entity_id_key,
         }
 
         if post_processor:

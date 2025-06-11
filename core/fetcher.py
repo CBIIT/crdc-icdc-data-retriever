@@ -84,7 +84,8 @@ def do_discovery_then_fetch(source):
     discovery = source["discovery"]
     match_key = discovery["match_key"]
     filter_prefix = discovery["filter_prefix"]
-    discovery_url = f"{source['api_base_url']}{discovery['endpoint']}"
+    api_base_url = source["api_base_url"]
+    discovery_url = f"{api_base_url}{discovery['endpoint']}"
 
     try:
         logger.debug(f"Starting fetch from discovery URL: {discovery_url}")
@@ -110,9 +111,8 @@ def do_discovery_then_fetch(source):
         for match in filtered_discovery_data:
             try:
                 param = source["fetch"]["key_param"]
-                fetch_url = source["fetch"]["endpoint_template"].format(
-                    **{param: match}
-                )
+                endpoint = source["fetch"]["endpoint_template"].format(**{param: match})
+                fetch_url = f"{api_base_url}{endpoint}"
             except KeyError as e:
                 logger.error(f"Missing key in 'endpoint_template': {e}")
                 raise ValueError(f"Missing key in 'endpoint_template': {e}")

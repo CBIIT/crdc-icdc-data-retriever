@@ -87,7 +87,11 @@ def match_all(entities, sources, fetched_data, entity_source_name) -> list:
             dataset_base_url=source["dataset_base_url"],
             dataset_base_url_param=source["dataset_base_url_param"],
             repository_name=source["name"],
-            match_key=source["match_key"],
+            match_key=(
+                source.get("match_key")
+                or source.get("discovery", {}).get("match_key")
+                or source.get("fetch", {}).get("match_key")
+            ),
             post_processor=post_processor,
         )
 

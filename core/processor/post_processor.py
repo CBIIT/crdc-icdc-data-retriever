@@ -1,18 +1,37 @@
 import logging
 import re
+from typing import Callable, Any
 
 from html2text import HTML2Text
 
 logger = logging.getLogger(__name__)
 
 
-def post_processor(fn):
+def post_processor(fn: Callable[..., Any]):
+    """Labels a function as a post-processor by setting attribute.
+
+    Args:
+        fn (Callable[..., Any]): Function to be labeled post-processor.
+
+    Returns:
+        Callable[..., Any]: Original function with an '_is_post_processor'
+        attribute added.
+    """
+
     fn._is_post_processor = True
     return fn
 
 
 def transform_html(html: str) -> str:
-    # handle oddly-formatted IDC response HTML
+    """Transforms HTML to plain text.
+
+    Args:
+        html (str): HTML string to transform.
+
+    Returns:
+        str: Plain-text version of HTML string.
+    """
+
     converter = HTML2Text()
     converter.ignore_links = True
     converter.body_width = 0
@@ -26,7 +45,16 @@ def transform_html(html: str) -> str:
 
 
 @post_processor
-def clean_idc_metadata(metadata_list: list) -> list:
+def clean_idc_metadata(metadata_list: list[dict]) -> list[dict]:
+    """Transforms 'description' fields in IDC metadata from HTML to plain text.
+
+    Args:
+        metadata_list (list[dict]): List of IDC metadata dicts.
+
+    Returns:
+        list[dict]: Updated metadata with transformed 'description' values.
+    """
+
     for metadata in metadata_list:
         if "description" in metadata:
             metadata["description"] = transform_html(metadata["description"])
@@ -38,8 +66,20 @@ def clean_idc_metadata(metadata_list: list) -> list:
 
 @post_processor
 def aggregate_tcia_series_data(
-    data: list, entity: str, collection_id: str, entity_id_key: str
+    data: list, entity: dict, collection_id: str, entity_id_key: str
 ) -> dict:
+    """Aggregates TCIA metadata fields for a given entity.
+
+    Args:
+        data (list[dict]): Array of TCIA metadata dicts.
+        entity (doct): Entity record being processed.
+        collection_id (str): ID of TCIA data collection.
+        entity_id_key (str): Key used to identify entity in project metadata.
+
+    Returns:
+        dict: A dict of aggregated metadata fields for the collection.
+    """
+
     total_images = 0
     total_patients = set()
     unique_modalities = set()

@@ -137,7 +137,7 @@ Customize the message format in `utils/notification_utils.py`.
 │   └── sns_notifier.py      # SNS integration
 ├── processor/
 │   ├── mapper.py            # Entity-to-source mapping logic
-│   └── post_processors.py   # Optional transformation hooks
+│   └── post_processor.py    # Optional transformation hooks
 ├── utils/
 │   ├── logging_utils.py     # Logger setup
 │   └── notification_utils.py # Slack-style message builder
@@ -148,11 +148,7 @@ Customize the message format in `utils/notification_utils.py`.
 ## 📝 TODO / Enhancements
 
 - [ ] Add retry/backoff logic for flaky endpoints  
-- [ ] Expand unit tests  
+- [ ] Unit tests  
 - [ ] Template-based config generation (e.g. Jinja)
 
 ---
-
-## 📄 License
-
-MIT License — see `LICENSE` file for details.

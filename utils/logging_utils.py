@@ -3,7 +3,19 @@ from logging.handlers import RotatingFileHandler
 import os
 
 
-def setup_logging(log_file_path="tmp/app.log", level=logging.INFO):
+def setup_logging(
+    log_file_path: str = "tmp/app.log", level: int = logging.INFO
+) -> None:
+    """Configures root logger and file/console handlers for application.
+
+    Args:
+        log_file_path (str): Path to log file.
+        level (int): Logging level (ex: logging.INFO, logging.DEBUG).
+
+    Returns:
+        None
+    """
+
     os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
 
     logger = logging.getLogger()

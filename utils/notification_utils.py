@@ -2,6 +2,17 @@ from datetime import datetime
 
 
 def build_notification_message(success: bool, mappings: list, project: str) -> str:
+    """Constructs SNS notification message summarizing data retrieval result.
+
+    Args:
+        success (bool): Data retrieval and mapping success/failure.
+        mappings (list): List of external data mappings associated with project.
+        project (str): Name of project being processed.
+
+    Returns:
+        str: Formatted message for SNS notification.
+    """
+
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     header = f"{'✅' if success else '❌'} Data Retriever Service Pipeline Report for '{project}'"
     time_info = f"Time: {timestamp}"

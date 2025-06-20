@@ -1,3 +1,10 @@
+"""
+Main entry point for the Data Retriever Service.
+
+Loads configuration file, orchestrates data fetching and entity mapping,
+writes results to OpenSearch and sends success/failure notifications.
+"""
+
 import argparse
 import logging
 
@@ -12,6 +19,12 @@ logger = logging.getLogger(__name__)
 
 
 def parse_args(args=None):
+    """
+    Parses command-line arguments for the application.
+
+    Returns:
+        argparse.Namespace: Parsed command-line arguments.
+    """
     parser = argparse.ArgumentParser(description="Run data retriever service.")
 
     parser.add_argument(
@@ -42,6 +55,19 @@ def parse_args(args=None):
 
 
 def main():
+    """
+    Runs the data retriever pipeline.
+
+    Steps:
+        - Loads the configuration file
+        - Fetches external data
+        - Maps data to project entities
+        - Writes data to OpenSearch
+        - Sends success/failure SNS notification
+
+    Returns:
+        None
+    """
     success = False
     mappings = []
 
@@ -77,7 +103,7 @@ def main():
         #     success=success, mappings=mappings, project=project
         # )
         # notifier.notify(subject="Data Retriever Service", message=message)
-        logger.warning("SNS notifications are currently unavailable.")
+        logger.warning("SNS topics not configured for notifications!")
 
 
 if __name__ == "__main__":

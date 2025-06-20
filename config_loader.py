@@ -1,6 +1,7 @@
 import logging
 import os
 import re
+from typing import Any, Dict, Optional, Union
 
 import yaml
 
@@ -9,19 +10,44 @@ logger = logging.getLogger(__name__)
 
 
 class ConfigHandler:
+    """
+    A class for loading, validating and managing YAML-based application configuration.
+    """
+
     def __init__(self, config_data: dict):
+        """
+        Initialize ConfigHandler with preloaded configuration data.
+
+        Args:
+            config_data (dict): Loaded config dict.
+
+        Raises:
+            TypeError: If config_data is not a dict.
+        """
         if not isinstance(config_data, dict):
             raise TypeError("Config data must be a dictionary!")
         self.config = config_data
         logger.debug("ConfigHandler instance initialized with supplied config data.")
 
-    def basic_load(self):
+    def basic_load(self) -> dict:
+        """
+        Load and validate config from set file path.
+
+        Returns:
+            dict: Loaded config dict.
+        """
         with open(self.config_path, "r") as file:
             self.config = yaml.safe_load(file)
         self.validate()
         return self.config
 
-    def validate(self):
+    def validate(self) -> None:
+        """
+        Validate the structure and required fields of the config data.
+
+        Raises:
+            ValueError: If required fields or formats are missing/invalid.
+        """
         logger.info("Validating configuration file...")
 
         if "project" not in self.config:
@@ -47,7 +73,16 @@ class ConfigHandler:
         logger.info("Configuration successfully validated!")
 
     @staticmethod
-    def _validate_output_config(output: dict):
+    def _validate_output_config(output: dict) -> None:
+        """
+        Validate 'output' section of application config.
+
+        Args:
+            output (dict): Output config block.
+
+        Raises:
+            ValueError: If required fields are missing or invalid.
+        """
         logger.debug("Validating output configuration block")
 
         if "destination" not in output:
@@ -67,7 +102,16 @@ class ConfigHandler:
                 raise ValueError(f"Missing required 'output' config key: {key}")
 
     @staticmethod
-    def _validate_notifications_config(notifications: dict):
+    def _validate_notifications_config(notifications: dict) -> None:
+        """
+        Validate 'notifications' section of application config.
+
+        Args:
+            notifications (dict): Notifications config block.
+
+        Raises:
+            ValueError: If required fields are missing or invalid.
+        """
         logger.debug("Validating notifications configuration block")
 
         if not isinstance(notifications, dict):
@@ -89,7 +133,16 @@ class ConfigHandler:
                 raise ValueError(f"Missing required 'notifications' config key: {key}")
 
     @staticmethod
-    def _validate_source_config(source: dict):
+    def _validate_source_config(source: dict) -> None:
+        """
+        Validate a source entry in the config.
+
+        Args:
+            source (dict): Source config block.
+
+        Raises:
+            ValueError: If required fields are missing or invalid.
+        """
         logger.debug("Validating sources configuration block")
 
         if not all(
@@ -125,12 +178,33 @@ class ConfigHandler:
                 )
 
     @staticmethod
-    def _require_dict_block(parent: dict, key: str, context: str):
+    def _require_dict_block(parent: dict, key: str, context: str) -> None:
+        """
+        Checks that a config block exists and is a dict.
+
+        Args:
+            parent (dict): Parent config block.
+            key (str): Key/name of the config block to check.
+            context (str): Context name for error message.
+
+        Raises:
+            ValueError: If config block is missing or not a dict.
+        """
         if key not in parent or not isinstance(parent[key], dict):
             raise ValueError(f"Missing or invalid '{key}' block in '{context}'")
 
     @staticmethod
-    def _env_var_constructor(loader, node):
+    def _env_var_constructor(loader: yaml.SafeLoader, node: yaml.Node) -> str:
+        """
+        Handle environment variable substitution for YAML loader.
+
+        Args:
+            loader (yaml.SafeLoader): YAML loader instance.
+            node (yaml.Node): Node to resolve.
+
+        Returns:
+            str: Resolved value from environment variable or fallback value.
+        """
         value = loader.construct_scalar(node)
         match = ENV_VAR_PATTERN.fullmatch(value)
         if match:
@@ -148,6 +222,15 @@ class ConfigHandler:
 
     @classmethod
     def load_config_with_env_vars(cls, config_path: str) -> "ConfigHandler":
+        """
+        Load a config YAML with environment variable substitution enabled.
+
+        Args:
+            config_path (str): Path to config YAML file.
+
+        Returns:
+            ConfigHandler: Validated ConfigHandler instance.
+        """
         logger.info(f"Loading config file: {config_path}")
 
         # custom YAML loader

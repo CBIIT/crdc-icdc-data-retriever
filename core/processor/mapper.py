@@ -1,4 +1,5 @@
 import logging
+from typing import Optional, Callable, Any
 
 from core.processor.post_processor_registry import apply_post_processor
 from utils.mapping_utils import normalize_metadata_groups, extract_first_valid_match
@@ -8,15 +9,30 @@ logger = logging.getLogger(__name__)
 
 
 def map_matches_to_entity(
-    entity,
-    source_config,
-    matched_source_data,
-    dataset_base_url,
-    dataset_base_url_param,
-    repository_name,
-    match_key,
-    post_processor=None,
+    entity: dict,
+    source_config: dict,
+    matched_source_data: list,
+    dataset_base_url: str,
+    dataset_base_url_param: str,
+    repository_name: str,
+    match_key: str,
+    post_processor: Optional[Callable[..., Any]] = None,
 ) -> list:
+    """Maps matched external data to a single project entity.
+
+    Args:
+        entity (dict): A single entity of a project.
+        source_config (dict): Config dict for external data source.
+        matched_source_data (list): Source data matched to an entity.
+        dataset_base_url (str): External dataset base URL.
+        dataset_base_url_param (str): Parameter used to format dataset URL.
+        repository_name (str): External data repository name.
+        match_key (str): Param used to access fetched source data from response.
+        post_processor (Optional[Callable[..., Any]]): Optional post-processor function.
+
+    Returns:
+        list: List of matched source data for the provided entity.
+    """
     crdc_links = []
     entity_id_key = source_config["entity_id_key"]
     entity_id = entity.get(entity_id_key, "")
@@ -57,15 +73,30 @@ def map_matches_to_entity(
 
 
 def collect_mappings(
-    entities,
-    source_config,
-    matched_source_data,
-    dataset_base_url,
-    dataset_base_url_param,
-    repository_name,
-    match_key,
-    post_processor=None,
+    entities: list[dict],
+    source_config: dict,
+    matched_source_data: list,
+    dataset_base_url: str,
+    dataset_base_url_param: str,
+    repository_name: str,
+    match_key: str,
+    post_processor: Optional[Callable[..., Any]],
 ) -> list:
+    """Iterates project entities and maps relevant external data.
+
+    Args:
+        entities (list[dict]): List of entities of a project.
+        source_config (dict): Config dict for external data source.
+        matched_source_data (list): Source data matched to project entities.
+        dataset_base_url (str): External dataset base URL.
+        dataset_base_url_param (str): Parameter used to format dataset URL.
+        repository_name (str): External data repository name.
+        match_key (str): Param used to access fetched source data from response.
+        post_processor (Optional[Callable[..., Any]]): Optional post-processor function.
+
+    Returns:
+        list: List of mappings of entities to matched external data, if applicable.
+    """
     crdc_mappings = []
     entity_id_key = source_config["entity_id_key"]
 

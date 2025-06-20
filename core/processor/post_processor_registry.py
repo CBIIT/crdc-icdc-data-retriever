@@ -20,7 +20,6 @@ def get_post_processor(name: str) -> Optional[Callable[..., Any]]:
         Optional[Callable[..., Any]]: A corresponding post-processor function
         or None if not found.
     """
-
     return POST_PROCESSOR_MAP.get(name)
 
 
@@ -34,7 +33,6 @@ def apply_post_processor(fn: Callable[..., Any], metadata: dict, **kwargs: dict)
     Returns:
         Any: The result of the post-processor function call.
     """
-
     try:
         return fn(metadata, **kwargs)
     except TypeError:

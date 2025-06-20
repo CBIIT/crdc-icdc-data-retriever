@@ -7,7 +7,21 @@ logger = logging.getLogger(__name__)
 
 
 class SNSNotifier:
+    """
+    Handles configuration and interaction with AWS SNS for sending notifications.
+    """
+
     def __init__(self, topic_arn: str, region: str = "us-east-1"):
+        """
+        Initialize SNSNotifier with SNS topic ARN and region.
+
+        Args:
+            topic_arn (str): SNS topic ARN.
+            region (str): AWS region.
+
+        Raises:
+            EnvironmentError: If required AWS credentials are missing.
+        """
         self.topic_arn = topic_arn
         self.region = region
 
@@ -26,6 +40,16 @@ class SNSNotifier:
         )
 
     def notify(self, subject: str, message: str) -> bool:
+        """
+        Publish message to SNS topic.
+
+        Args:
+            subject (str): Message subject.
+            message (str): Notification message.
+
+        Returns:
+            bool: True if the message was successfully published, otherwise False.
+        """
         try:
             response = self.client.publish(
                 TopicArn=self.topic_arn,

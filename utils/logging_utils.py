@@ -15,7 +15,6 @@ def setup_logging(
     Returns:
         None
     """
-
     os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
 
     logger = logging.getLogger()

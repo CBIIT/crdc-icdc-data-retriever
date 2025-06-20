@@ -8,7 +8,18 @@ from core.processor.post_processor_registry import get_post_processor
 logger = logging.getLogger(__name__)
 
 
-def run_dispatcher(config, parallel: bool = False):
+def run_dispatcher(config: dict, parallel: bool = False) -> list:
+    """
+    Coordinates data retrieval from config sources and maps results to project
+    entities.
+
+    Args:
+        config (dict): Config dict.
+        parallel (bool): Parallel fetching switch.
+
+    Returns:
+        list: List of external data mappings associated with entities.
+    """
     logger.info("Starting dispatcher run...")
     entity_source_name = config["entity_source"]
     sources = config["sources"]
@@ -26,6 +37,15 @@ def run_dispatcher(config, parallel: bool = False):
 
 
 def fetch_all(sources: list) -> dict:
+    """
+    Fetch data from all sources sequentially.
+
+    Args:
+        sources (list): List of source config dicts.
+
+    Returns:
+        dict: Mapping of source names to fetched data, or None if fetch failed.
+    """
     logger.info(f"Fetching from {len(sources)} sources sequentially...")
     results = {}
     for source in sources:
@@ -40,6 +60,16 @@ def fetch_all(sources: list) -> dict:
 
 
 def fetch_all_parallel(sources: list, max_workers: int = 8) -> dict:
+    """
+    Fetch data from all sources concurrently using threads.
+
+    Args:
+        sources (list): List of source config dicts.
+        max_workers (int): Max number of worker threads.
+
+    Returns:
+        dict: Mapping of source names to fetched data, or None if fetch failed.
+    """
     logger.info(
         f"Fetching from {len(sources)} sources in parallel using {max_workers} workers..."
     )
@@ -63,7 +93,22 @@ def fetch_all_parallel(sources: list, max_workers: int = 8) -> dict:
     return results
 
 
-def match_all(entities, sources, fetched_data, entity_source_name) -> list:
+def match_all(
+    entities: list, sources: list, fetched_data: dict, entity_source_name: str
+) -> list:
+    """
+    Maps fetched external data from sources (excluding entity source) to matching project
+    entities using configured match keys and optional post-processors.
+
+    Args:
+        entities (list): List of project entities to match against.
+        sources (list): List of external data source configs.
+        fetched_data (dict): All data fetched from sources.
+        entity_source_name (str): Name of source providing entities.
+
+    Returns:
+        list: Combined list of external data mappings to project entities.
+    """
     logger.info("Beginning mapping of source data to entities...")
     results = []
 

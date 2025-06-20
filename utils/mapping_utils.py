@@ -8,7 +8,6 @@ def normalize_metadata_groups(matched_source_data: list) -> list:
     Returns:
         list: A list where each item is a list of metadata dicts.
     """
-
     if not matched_source_data:
         return []
     if isinstance(matched_source_data[0], dict):
@@ -26,7 +25,6 @@ def extract_first_valid_match(metadata_group: list, match_key: str) -> str:
     Returns:
         str: The first non-empty value found for match_key, or an empty string.
     """
-
     for metadata in metadata_group:
         value = metadata.get(match_key)
         if value:

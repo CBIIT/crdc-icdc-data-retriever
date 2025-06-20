@@ -1,10 +1,20 @@
 import logging
 import requests
+from typing import Optional, Union
 
 logger = logging.getLogger(__name__)
 
 
-def fetch_from_source(source):
+def fetch_from_source(source: dict) -> Optional[list]:
+    """Routes external data source fetching to appropriate fetching function
+    based on source config.
+
+    Args:
+        source (dict): Config for external data source.
+
+    Returns:
+        Optional[list]: Data fetched from the source, or None if no data was retrieved.
+    """
     source_name = source.get("name", "<unknown>")
     source_type = source.get("type", "<unknown>")
 
@@ -42,7 +52,19 @@ def fetch_from_source(source):
         return None
 
 
-def fetch_direct(source):
+def fetch_direct(source: dict) -> list:
+    """Performs direct fetch (i.e. GET request) using the endpoint specified
+    in the source config.
+
+    Args:
+        source (dict): Config for external data source.
+
+    Returns:
+        list: Data fetched from the source.
+
+    Raises:
+        RuntimeError: If the request fails or response is invalid.
+    """
     source_name = source.get("name", "<unknown>")
 
     logger.info(f"Starting direct fetch for source: {source_name}")
@@ -80,7 +102,16 @@ def fetch_direct(source):
         raise RuntimeError(f"Invalid JSON response for source {source_name}: {e}")
 
 
-def do_discovery_then_fetch(source):
+def do_discovery_then_fetch(source: dict) -> list:
+    """Performs a two-step fetch process, where data from a 'discovery'
+    endpoint is used to generate one or more follow-up fetch requests.
+
+    Args:
+        source (dict): Config for external data source.
+
+    Returns:
+        list: Data fetched from the source.
+    """
     discovery = source["discovery"]
     match_key = discovery["match_key"]
     filter_prefix = discovery["filter_prefix"]
@@ -139,7 +170,18 @@ def do_discovery_then_fetch(source):
         raise RuntimeError(f"Invalid JSON response for source {source['name']}: {e}")
 
 
-def fetch_graphql(source):
+def fetch_graphql(source: dict) -> list:
+    """Performs data fetch from a GraphQL endpoint via a POST request.
+
+    Args:
+        source (dict): Config for external data source.
+
+    Returns:
+        list: Data fetched from the GraphQL source.
+
+    Raises:
+        RuntimeError: If the GraphQL query fails or returns an error.
+    """
     logger.info(f"Starting GraphQL fetch for source: {source['name']}")
 
     try:
@@ -164,7 +206,17 @@ def fetch_graphql(source):
         raise RuntimeError(f"Invalid JSON response for source {source['name']}: {e}")
 
 
-def extract_response_data(source, response_json):
+def extract_response_data(source: dict, response_json: dict) -> Union[list, dict]:
+    """Extracts relevant data from the full JSON response using the 'response_data_key'
+    provided in source config.
+
+    Args:
+        source (dict): Config for external data source.
+        response_json (dict): JSON object returned from data fetch.
+
+    Returns:
+        Union[list, dict]: Portion of response containing relevant data.
+    """
     key = source.get("response_data_key")
     if not key:
         return response_json

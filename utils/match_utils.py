@@ -12,5 +12,4 @@ def is_fuzzy_match(str1: str, str2: str, threshold: int = 75) -> bool:
     Returns:
         bool: True if string comparison meets fuzzy match threshold; otherwise False.
     """
-
     return fuzz.partial_ratio(str1.lower(), str2.lower()) >= threshold

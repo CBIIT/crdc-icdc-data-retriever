@@ -10,8 +10,22 @@ logger = logging.getLogger(__name__)
 
 
 class OpenSearchWriter:
+    """
+    Handles connection to OpenSearch host and writing documents to indices.
+    """
 
     def __init__(self, config: dict):
+        """
+        Initialize OpenSearchWriter and connect to host using data provided in the
+        'output' config block.
+
+        Args:
+            config (dict): App config data.
+
+        Raises:
+            EnvironmentError: If required OpenSearch credentials are missing.
+            ConnectionError: If client cannot connect to OpenSearch host.
+        """
         self.config = config
         self.output_config = self.config.get("output", {}).get("config", {})
         self.index = self.output_config["index"]
@@ -37,23 +51,19 @@ class OpenSearchWriter:
 
         logger.info(f"Connected to OpenSearch host: {self.host}")
 
-    def write_documents(self, doc, doc_id=None):
-        try:
-            response = self.client.index(index=self.index, id=doc_id, body=doc)
-            if response.get("result") in {"created", "updated"}:
-                logger.info(
-                    f"Document {response.get('_id')} successfully {response['result']} in index '{self.index}'"
-                )
-            else:
-                logger.warning(
-                    f"Unexpected indexing result for document {response.get('_id')}: {response.get('result')}"
-                )
-            return response
-        except OpenSearchException as e:
-            logger.error(f"Failed to write documents to index {self.index}: {e}")
-            raise RuntimeError(f"Failed to write document to index '{self.index}': {e}")
+    def bulk_write_documents(self, documents: list) -> dict:
+        """
+        Bulk write documents to an OpenSearch index.
 
-    def bulk_write_documents(self, documents):
+        Args:
+            documents (list): A list of documents containing data.
+
+        Returns:
+            dict: Summary of bulk write results (successful / attempted).
+
+        Raises:
+            RuntimeError: If bulk write to index fails.
+        """
         try:
             documents = OpenSearchWriter._ensure_json_serializable(documents)
             project = self.config.get("project")
@@ -94,7 +104,16 @@ class OpenSearchWriter:
             raise RuntimeError(f"Failed to perform bulk write to OpenSearch: {e}")
 
     @staticmethod
-    def _ensure_json_serializable(documents):
+    def _ensure_json_serializable(documents: list) -> list:
+        """
+        Filters out documents that are not JSON-serializable.
+
+        Args:
+            documents (list): A list of candidate documents.
+
+        Returns:
+            list: List of documents that are JSON-serializable.
+        """
         serializable_docs = []
         for doc in documents:
             try:

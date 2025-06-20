@@ -17,7 +17,6 @@ def post_processor(fn: Callable[..., Any]):
         Callable[..., Any]: Original function with an '_is_post_processor'
         attribute added.
     """
-
     fn._is_post_processor = True
     return fn
 
@@ -31,7 +30,6 @@ def transform_html(html: str) -> str:
     Returns:
         str: Plain-text version of HTML string.
     """
-
     converter = HTML2Text()
     converter.ignore_links = True
     converter.body_width = 0
@@ -54,7 +52,6 @@ def clean_idc_metadata(metadata_list: list[dict]) -> list[dict]:
     Returns:
         list[dict]: Updated metadata with transformed 'description' values.
     """
-
     for metadata in metadata_list:
         if "description" in metadata:
             metadata["description"] = transform_html(metadata["description"])
@@ -72,14 +69,13 @@ def aggregate_tcia_series_data(
 
     Args:
         data (list[dict]): Array of TCIA metadata dicts.
-        entity (doct): Entity record being processed.
+        entity (dict): Entity record being processed.
         collection_id (str): ID of TCIA data collection.
         entity_id_key (str): Key used to identify entity in project metadata.
 
     Returns:
         dict: A dict of aggregated metadata fields for the collection.
     """
-
     total_images = 0
     total_patients = set()
     unique_modalities = set()

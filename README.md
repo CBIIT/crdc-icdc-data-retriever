@@ -1,35 +1,10 @@
 # Data Retriever Service
 
-A lightweight, YAML-configurable service that fetches data from multiple external sources (REST, GraphQL), maps them to internal entities, and stores the results in OpenSearch. Optional post-processing and SNS notification support included.
-
-## 📦 Features
-
-- ✅ Config-driven data fetching and transformation  
-- 🔁 Supports REST (with discovery/fetch) and GraphQL sources  
-- 🧠 Pluggable post-processing  
-- 💥 Optional multithreaded fetch for performance  
-- 🔍 Outputs to OpenSearch  
-- 🔔 SNS notifications on pipeline success/failure  
-- 📄 YAML config validation and environment variable substitution  
+A YAML-configurable service that fetches data from multiple external sources, maps them to internal entities (ex: ICDC study), provides optional post-processing and stores the results in OpenSearch.
 
 ---
 
-## 🚀 Quick Start
-
-### 1. Clone the Repo
-
-```bash
-git clone https://github.com/your-org/data-retriever.git
-cd data-retriever
-```
-
-### 2. Create a Config File
-
-Copy and edit the provided config template:
-
-```bash
-cp config.example.yaml config.yaml
-```
+### Config File
 
 Ensure the following sections are configured:
 
@@ -39,21 +14,19 @@ Ensure the following sections are configured:
 - `output`: OpenSearch settings
 - `notifications`: (optional) SNS topic for alerting
 
-### 3. Set Environment Variables
+### Environment Variables
 
-Ensure the following are available:
+If sending notifications, ensure the following are available:
 
 ```bash
 export AWS_ACCESS_KEY_ID=your-access-key
 export AWS_SECRET_ACCESS_KEY=your-secret-key
 ```
 
-You may also use `.env` or your orchestration tool (Docker/Kubernetes/etc.) to set these.
-
-### 4. Run the Service
+### Run the Service
 
 ```bash
-python main.py --config config.yaml
+python main.py --config path/to/config/yaml
 ```
 
 ### Optional Flags
@@ -64,20 +37,7 @@ python main.py --config config.yaml
 
 ---
 
-## 🐳 Docker Usage
-
-Build and run the service inside a container:
-
-```bash
-docker build -t data-retriever .
-docker run -e AWS_ACCESS_KEY_ID=... -e AWS_SECRET_ACCESS_KEY=... -v $(pwd)/config.yaml:/app/config.yaml data-retriever --config config.yaml
-```
-
-> ✅ Ensure `config.yaml` is mounted into the container if not baked into the image.
-
----
-
-## ⚙️ Output Format
+### Output Format
 
 Documents are written to OpenSearch with one document per `entity_id` per source:
 
@@ -101,30 +61,7 @@ Documents are written to OpenSearch with one document per `entity_id` per source
 
 ---
 
-## 🧪 Testing
-
-Start with config validation:
-
-```bash
-python main.py --config config.yaml --dry-run --log-level DEBUG
-```
-
-Then test with real writes and notifications disabled:
-
-```bash
-python main.py --config config.yaml --dry-run
-```
-
----
-
-## 📬 Notifications
-
-If configured, the app will send SNS messages (e.g., to a Slack integration) on success or failure.  
-Customize the message format in `utils/notification_utils.py`.
-
----
-
-## 🧱 Project Structure
+### Project Structure
 
 ```
 .
@@ -132,23 +69,25 @@ Customize the message format in `utils/notification_utils.py`.
 ├── config_loader.py         # YAML config parser + env var support
 ├── core/
 │   ├── dispatcher.py        # Fetch + match coordination
-│   ├── fetcher.py           # REST + GraphQL fetch logic
+│   ├── fetcher.py           # Fetch config + logic
 │   ├── writer/              # OpenSearch writer
 │   └── sns_notifier.py      # SNS integration
 ├── processor/
 │   ├── mapper.py            # Entity-to-source mapping logic
 │   └── post_processor.py    # Optional transformation hooks
+│   └── post_processor_registry.py # Post-processor mapping
 ├── utils/
 │   ├── logging_utils.py     # Logger setup
-│   └── notification_utils.py # Slack-style message builder
+│   └── mapping_utils.py     # Mapping helpers
+│   └── match_utils.py       # Matching helpers
+│   └── notification_utils.py # Notification message builder
 ```
 
 ---
 
-## 📝 TODO / Enhancements
+### TODO / Enhancements
 
-- [ ] Add retry/backoff logic for flaky endpoints  
-- [ ] Unit tests  
-- [ ] Template-based config generation (e.g. Jinja)
+- [ ] Unit tests 
+- [ ] Add retry/backoff logic for unstable endpoints   
 
 ---

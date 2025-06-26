@@ -16,11 +16,18 @@ Ensure the following sections are configured:
 
 ### Environment Variables
 
+For OpenSearch authentication, make sure the following are defined:
+
+```bash
+export OPENSEARCH_USERNAME=<opensearch-username>
+export OPENSEARCH_PASSWORD=<opensearch-password>
+```
+
 If sending notifications, ensure the following are available:
 
 ```bash
-export AWS_ACCESS_KEY_ID=your-access-key
-export AWS_SECRET_ACCESS_KEY=your-secret-key
+export AWS_ACCESS_KEY_ID=<access-key>
+export AWS_SECRET_ACCESS_KEY=<secret-access-key>
 ```
 
 ### Run the Service
@@ -88,6 +95,8 @@ Documents are written to OpenSearch with one document per `entity_id` per source
 ### TODO / Enhancements
 
 - [ ] Unit tests 
-- [ ] Add retry/backoff logic for unstable endpoints   
+- [ ] Prefect integration
+- [ ] Add retry/backoff logic for unstable endpoints
+- [ ] More detailed type hints for improved IDE integration
 
 ---

@@ -5,8 +5,13 @@ charset-normalizer==3.4.2
 Events==0.5
 html2text==2025.4.15
 idna==3.10
+iniconfig==2.1.0
 jmespath==1.0.1
 opensearch-py==2.8.0
+packaging==25.0
+pluggy==1.6.0
+Pygments==2.19.2
+pytest==8.4.1
 python-dateutil==2.9.0.post0
 PyYAML==6.0.2
 RapidFuzz==3.13.0

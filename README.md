@@ -95,6 +95,7 @@ Documents are written to OpenSearch with one document per `entity_id` per source
 ### TODO / Enhancements
 
 - [ ] Unit tests 
+- [ ] Integration tests 
 - [ ] Prefect integration
 - [ ] Add retry/backoff logic for unstable endpoints
 - [ ] More detailed type hints for improved IDE integration

@@ -59,7 +59,6 @@ def test_successful_bulk_write(mock_opensearch, mock_bulk, mock_config):
         {"entity_id": "TEST1", "CRDCLinks": [{"repository": "test_repo_1"}]},
         {"entity_id": "TEST2", "CRDCLinks": [{"repository": "test_repo_2"}]},
     ]
-
     result = writer.bulk_write_documents(documents)
     assert result == {"success": 2, "attempted": 2}
 

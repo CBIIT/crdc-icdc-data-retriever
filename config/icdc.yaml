@@ -45,8 +45,8 @@ output:
     index: external_data
     use_ssl: false
     verify_certs: false
-notifications:
-  destination: sns
-  config:
-    topic_arn: ${SNS_TOPIC_ARN}
-    region: ${SNS_REGION:-us-east-1}
+# notifications:
+#   destination: sns
+#   config:
+#     topic_arn: ${SNS_TOPIC_ARN}
+#     region: ${SNS_REGION:-us-east-1}

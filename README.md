@@ -101,3 +101,10 @@ Documents are written to OpenSearch with one document per `entity_id` per source
 - [ ] More detailed type hints for improved IDE integration
 
 ---
+
+### Additional Guides:
+
+- [Configuration YAML Setup Guide](docs/CONFIG_GUIDE.md)
+- [Post-processor Plug-in Guide](docs/POSTPROCESSOR_GUIDE.md)
+
+---

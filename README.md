@@ -105,6 +105,6 @@ Documents are written to OpenSearch with one document per `entity_id` per source
 ### Additional Guides:
 
 - [Configuration YAML Setup Guide](docs/CONFIG_GUIDE.md)
-- [Post-processor Plug-in Guide](docs/POSTPROCESSOR_GUIDE.md)
+- [Post-processor Plug-in Guide](docs/POST_PROCESSOR_GUIDE.md)
 
 ---

@@ -70,6 +70,8 @@ def main():
     """
     success = False
     mappings = []
+    config = {}
+    project = "<unknown>"
 
     args = parse_args()
     setup_logging(level=getattr(logging, args.log_level))
@@ -87,23 +89,28 @@ def main():
                 )
             else:
                 writer = OpenSearchWriter(config=config)
-                writer.bulk_write_documents(mappings)
+                write_results = writer.bulk_write_documents(mappings)
 
-        success = True
+                written = write_results.get("success", 0)
+                if written > 0:
+                    success = True
 
     except Exception as e:
         logger.exception(f"Data Retriever Service pipeline failed: {e}")
 
-    if config.get("notifications") and not args.dry_run:
-        # topic_arn = config["notifications"]["topic_arn"]
-        # region = config["notifications"]["region"]
+    finally:
+        if config.get("notifications") and not args.dry_run:
+            try:
+                topic_arn = config["notifications"]["config"]["topic_arn"]
+                region = config["notifications"]["config"]["region"]
 
-        # notifier = SNSNotifier(topic_arn=topic_arn, region=region)
-        # message = build_notification_message(
-        #     success=success, mappings=mappings, project=project
-        # )
-        # notifier.notify(subject="Data Retriever Service", message=message)
-        logger.warning("SNS topics not configured for notifications!")
+                notifier = SNSNotifier(topic_arn=topic_arn, region=region)
+                message = build_notification_message(
+                    success=success, mappings=mappings, project=project
+                )
+                notifier.notify(subject="Data Retriever Service", message=message)
+            except Exception as notify_err:
+                logger.error(f"Failed to send SNS notification: {notify_err}")
 
 
 if __name__ == "__main__":

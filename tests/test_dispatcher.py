@@ -12,7 +12,7 @@ SOURCE_CONFIG = [
     },
 ]
 
-ENTITIES = [{"id": 1, "id": 2}]
+ENTITIES = [{"id": 1}, {"id": 2}]
 
 FETCHED_DATA = {
     "source_A": ENTITIES,

@@ -16,7 +16,7 @@ ENTITIES = [{"id": 1}, {"id": 2}]
 
 FETCHED_DATA = {
     "source_A": ENTITIES,
-    "source_B": [{"entity_id": 1, "entity_id": 2}],
+    "source_B": [{"entity_id": 1}, {"entity_id": 2}],
 }
 
 

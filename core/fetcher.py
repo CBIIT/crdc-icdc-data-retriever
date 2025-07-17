@@ -91,7 +91,11 @@ def fetch_direct(source: dict) -> list:
             logger.debug(
                 f"Filtering fetched data for prefix '{filter_prefix}' on key '{match_key}'"
             )
-            data = [item for item in data if filter_prefix in item.get(match_key, "")]
+            data = [
+                item
+                for item in data
+                if item.get(match_key, "").startswith(filter_prefix)
+            ]
         logger.info(f"Fetched {len(data)} records from source: {source_name}")
         return data
     except requests.exceptions.RequestException as e:
@@ -135,7 +139,7 @@ def do_discovery_then_fetch(source: dict) -> list:
         filtered_discovery_data = [
             item[match_key]
             for item in discovery_data
-            if filter_prefix in item[match_key]
+            if item[match_key].startswith(filter_prefix)
         ]
         logger.debug("Starting fetch phase...")
         fetch_data = []

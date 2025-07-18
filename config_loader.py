@@ -127,7 +127,7 @@ class ConfigHandler:
 
         ConfigHandler._require_dict_block(notifications, "config", "notifications")
 
-        notifications_config_required_keys = ["topic_arn"]
+        notifications_config_required_keys = ["topic_arn", "region"]
         for key in notifications_config_required_keys:
             if key not in notifications["config"]:
                 raise ValueError(f"Missing required 'notifications' config key: {key}")

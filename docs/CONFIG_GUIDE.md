@@ -21,6 +21,8 @@ sources:
     type: graphql
     api_base_url: https://some-api.org
     endpoint: /graphql
+    dataset_base_url: https://some-api.org/data?Collection={collection_id}
+    dataset_base_url_param: collection_id
     query: "{ query { field } }"
     response_data_key: data.records
     match_key: external_id
@@ -30,6 +32,8 @@ sources:
     type: rest
     api_base_url: https://another-api.org
     endpoint: /records
+    dataset_base_url: https://another-api.org/data?dataset={collection_id}
+    dataset_base_url_param: collection_id
     response_data_key: items
     match_key: external_id
     filter_prefix: ABC

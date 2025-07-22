@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 def build_notification_message(success: bool, mappings: list, project: str) -> str:
@@ -12,7 +12,7 @@ def build_notification_message(success: bool, mappings: list, project: str) -> s
     Returns:
         str: Formatted message for SNS notification.
     """
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
     header = f"{'✅' if success else '❌'} Data Retriever Service Pipeline Report for '{project}'"
     time_info = f"Time: {timestamp}"
 

@@ -4,7 +4,7 @@ import os
 
 
 def setup_logging(
-    log_file_path: str = "tmp/app.log", level: int = logging.INFO
+    log_file_path: str = "/var/log/app.log", level: int = logging.INFO
 ) -> None:
     """Configures root logger and file/console handlers for application.
 

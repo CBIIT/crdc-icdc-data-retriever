@@ -11,7 +11,7 @@ class SNSNotifier:
     Handles configuration and interaction with AWS SNS for sending notifications.
     """
 
-    def __init__(self, topic_arn: str, region: str = "us-east-1"):
+    def __init__(self, topic_arn: str, region: str):
         """
         Initialize SNSNotifier with SNS topic ARN and region.
 

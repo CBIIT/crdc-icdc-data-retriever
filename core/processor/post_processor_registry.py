@@ -35,5 +35,8 @@ def apply_post_processor(fn: Callable[..., Any], metadata: dict, **kwargs: dict)
     """
     try:
         return fn(metadata, **kwargs)
-    except TypeError:
-        return fn(metadata)
+    except TypeError as e:
+        if "unexpected keyword argument" in str(e):
+            return fn(metadata)
+        else:
+            raise e

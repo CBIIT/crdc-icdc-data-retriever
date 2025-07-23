@@ -1,8 +1,11 @@
+import copy
 import logging
 import re
 from typing import Callable, Any
 
 from html2text import HTML2Text
+
+from utils.post_processor_utils import deep_merge_additive
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +79,13 @@ def aggregate_tcia_series_data(
     Returns:
         dict: A dict of aggregated metadata fields for the collection.
     """
+    ENTITY_OVERRIDES = {
+        "GLIOMA01": {
+            "Aggregate_ImageCount": 84,
+            "Aggregate_Modality": ["Histopathology"],
+        }
+    }
+
     total_images = 0
     total_patients = set()
     unique_modalities = set()
@@ -87,23 +97,24 @@ def aggregate_tcia_series_data(
         unique_modalities.add(item["Modality"])
         unique_bodyparts.add(item["BodyPartExamined"])
 
-    # hardcode inaccessible TCIA data for GLIOMA01
-    entity_id = entity.get(entity_id_key)
-    if entity_id == "GLIOMA01":
-        unique_modalities.add("Histopathology")
-        total_images += 84
-        logger.info("Hardcoded TCIA data for GLIOMA01 entity added to totals.")
-
-    logger.info(
-        f"Completed aggregation of TCIA series data for collection '{collection_id}': "
-        f"{len(total_patients)} patients, {total_images} images, "
-        f"modalities: {sorted(unique_modalities)}, body parts: {sorted(unique_bodyparts)}"
-    )
-
-    return {
+    result = {
         "Collection": collection_id,
         "Aggregate_PatientID": len(total_patients),
         "Aggregate_Modality": list(unique_modalities),
         "Aggregate_BodyPartExamined": list(unique_bodyparts),
         "Aggregate_ImageCount": total_images,
     }
+
+    entity_id = entity.get(entity_id_key)
+    if entity_id in ENTITY_OVERRIDES:
+        override = copy.deepcopy(ENTITY_OVERRIDES[entity_id])
+        result = deep_merge_additive(result, override)
+        logger.info(f"Additional TCIA data for {entity_id} entity added to totals.")
+
+    logger.info(
+        f"Completed aggregation of TCIA series data for collection '{collection_id}': "
+        f"{result['Aggregate_PatientID']} patients, {result['Aggregate_ImageCount']} images, "
+        f"modalities: {sorted(result['Aggregate_Modality'])}, body parts: {sorted(result['Aggregate_BodyPartExamined'])}"
+    )
+
+    return result

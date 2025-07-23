@@ -225,5 +225,7 @@ def extract_response_data(source: dict, response_json: dict) -> Union[list, dict
     if not key:
         return response_json
     for part in key.split("."):
+        if not isinstance(response_json, dict):
+            return {}
         response_json = response_json.get(part, {})
     return response_json

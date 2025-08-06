@@ -1,0 +1,52 @@
+project: ICDC
+entity_source: ICDC
+sources:
+  - name: IDC
+    type: rest
+    api_base_url: https://api.imaging.datacommons.cancer.gov/v1
+    dataset_base_url: https://portal.imaging.datacommons.cancer.gov/explore/filters/?collection_id={collection_id}
+    dataset_base_url_param: collection_id
+    endpoint: /collections
+    response_data_key: collections
+    match_key: collection_id
+    filter_prefix: icdc_
+    post_processor: clean_idc_metadata
+    entity_id_key: clinical_study_designation
+  - name: TCIA
+    type: rest
+    api_base_url: https://services.cancerimagingarchive.net/services/v4
+    dataset_base_url: https://nbia.cancerimagingarchive.net/nbia-search/?MinNumberOfStudiesCriteria=1&CollectionCriteria={collection_id}
+    dataset_base_url_param: collection_id
+    discovery:
+      endpoint: /TCIA/query/getCollectionValues
+      match_key: Collection
+      filter_prefix: ICDC-
+    fetch:
+      endpoint_template: /TCIA/query/getSeries?Collection={collection_id}
+      key_param: collection_id
+    post_processor: aggregate_tcia_series_data
+    entity_id_key: clinical_study_designation
+  - name: ICDC
+    type: graphql
+    api_base_url: https://caninecommons-dev.cancer.gov
+    endpoint: /graphql/
+    response_data_key: data.studiesByProgram
+    query: |
+      {
+        studiesByProgram {
+            clinical_study_designation
+        }
+      }
+    entity_id_key: clinical_study_designation
+output:
+  destination: opensearch
+  config:
+    host: http://localhost:9200
+    index: external_data
+    use_ssl: false
+    verify_certs: false
+notifications:
+  destination: sns
+  config:
+    topic_arn: ${SNS_TOPIC_ARN}
+    region: ${SNS_REGION:-us-east-1}

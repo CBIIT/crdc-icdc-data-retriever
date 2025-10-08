@@ -96,7 +96,7 @@ class ConfigHandler:
 
         ConfigHandler._require_dict_block(output, "config", "output")
 
-        output_config_required_keys = ["host", "index"]
+        output_config_required_keys = ["host", "index", "username", "password"]
         for key in output_config_required_keys:
             if key not in output["config"]:
                 raise ValueError(f"Missing required 'output' config key: {key}")

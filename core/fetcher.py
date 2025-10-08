@@ -5,6 +5,9 @@ from typing import Optional, Union
 logger = logging.getLogger(__name__)
 
 
+REQUEST_TIMEOUT = (5, 30)  # (connect_timeout, read_timeout)
+
+
 def fetch_from_source(source: dict) -> Optional[list]:
     """Routes external data source fetching to appropriate fetching function
     based on source config.
@@ -72,7 +75,7 @@ def fetch_direct(source: dict) -> list:
     try:
         source_url = f"{source['api_base_url']}{source['endpoint']}"
         logger.debug(f"Request URL: {source_url}")
-        response = requests.get(source_url)
+        response = requests.get(source_url, timeout=REQUEST_TIMEOUT)
         if not response.ok:
             logger.error(
                 f"Direct fetch failed for source '{source_name}': {response.status_code} {response.reason}"
@@ -101,6 +104,10 @@ def fetch_direct(source: dict) -> list:
     except requests.exceptions.RequestException as e:
         logger.error(f"RequestException for source {source_name}: {e}")
         raise RuntimeError(f"Request failed for source {source_name}: {e}")
+    except requests.exceptions.Timeout as e:
+        logger.warning(
+            f"Request timed out for source {source['name']} (url={source_url})"
+        )
     except ValueError as e:
         logger.error(f"Invalid JSON response for source {source_name}: {e}")
         raise RuntimeError(f"Invalid JSON response for source {source_name}: {e}")
@@ -124,7 +131,7 @@ def do_discovery_then_fetch(source: dict) -> list:
 
     try:
         logger.debug(f"Starting fetch from discovery URL: {discovery_url}")
-        discovery_res = requests.get(discovery_url)
+        discovery_res = requests.get(discovery_url, timeout=REQUEST_TIMEOUT)
         if not discovery_res.ok:
             logger.error(
                 f"Discovery fetch failed for source '{source['name']}': {discovery_res.status_code} {discovery_res.reason}"
@@ -151,7 +158,7 @@ def do_discovery_then_fetch(source: dict) -> list:
             except KeyError as e:
                 logger.error(f"Missing key in 'endpoint_template': {e}")
                 raise ValueError(f"Missing key in 'endpoint_template': {e}")
-            res = requests.get(fetch_url)
+            res = requests.get(fetch_url, timeout=REQUEST_TIMEOUT)
             if not res.ok:
                 logger.error(
                     f"Fetch phase failed for {fetch_url}: {res.status_code} {res.reason}"
@@ -169,6 +176,10 @@ def do_discovery_then_fetch(source: dict) -> list:
     except requests.exceptions.RequestException as e:
         logger.error(f"RequestException for source {source['name']}: {e}")
         raise RuntimeError(f"Request failed for source {source['name']}: {e}")
+    except requests.exceptions.Timeout as e:
+        logger.warning(
+            f"Request timed out for source {source['name']} (url={source_url})"
+        )
     except ValueError as e:
         logger.error(f"Invalid JSON response for source {source['name']}: {e}")
         raise RuntimeError(f"Invalid JSON response for source {source['name']}: {e}")
@@ -191,7 +202,9 @@ def fetch_graphql(source: dict) -> list:
     try:
         source_url = f"{source['api_base_url']}{source['endpoint']}"
         logger.debug(f"GraphQL fetch URL: {source_url}")
-        response = requests.post(url=source_url, json={"query": source["query"]})
+        response = requests.post(
+            url=source_url, json={"query": source["query"]}, timeout=REQUEST_TIMEOUT
+        )
         if not response.ok:
             logger.error(
                 f"GraphQL fetch failed for {source_url}: {response.status_code} {response.reason}"
@@ -205,6 +218,10 @@ def fetch_graphql(source: dict) -> list:
     except requests.exceptions.RequestException as e:
         logger.error(f"RequestException for source {source['name']}: {e}")
         raise RuntimeError(f"Request failed for source {source['name']}: {e}")
+    except requests.exceptions.Timeout as e:
+        logger.warning(
+            f"Request timed out for source {source['name']} (url={source_url})"
+        )
     except ValueError as e:
         logger.error(f"Invalid JSON response for source {source['name']}: {e}")
         raise RuntimeError(f"Invalid JSON response for source {source['name']}: {e}")

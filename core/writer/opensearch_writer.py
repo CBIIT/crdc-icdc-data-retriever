@@ -35,12 +35,18 @@ class OpenSearchWriter:
 
         self.username = os.getenv("OPENSEARCH_USERNAME")
         self.password = os.getenv("OPENSEARCH_PASSWORD")
-        if not self.username or not self.password:
-            raise EnvironmentError("OpenSearch credentials not provided")
+
+        auth = None
+        if self.username and self.password:
+            auth = (self.username, self.password)
+        else:
+            logger.warning(
+                "OpenSearch credentials not provided: Attempting connection without authentication."
+            )
 
         self.client = OpenSearch(
             hosts=[self.host],
-            http_auth=(self.username, self.password),
+            http_auth=auth,
             use_ssl=self.use_ssl,
             verify_certs=self.verify_certs,
         )

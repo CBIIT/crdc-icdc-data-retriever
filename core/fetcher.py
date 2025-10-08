@@ -158,17 +158,23 @@ def do_discovery_then_fetch(source: dict) -> list:
             except KeyError as e:
                 logger.error(f"Missing key in 'endpoint_template': {e}")
                 raise ValueError(f"Missing key in 'endpoint_template': {e}")
-            res = requests.get(fetch_url, timeout=REQUEST_TIMEOUT)
-            if not res.ok:
-                logger.error(
-                    f"Fetch phase failed for {fetch_url}: {res.status_code} {res.reason}"
+            try:
+                res = requests.get(fetch_url, timeout=REQUEST_TIMEOUT)
+                if not res.ok:
+                    logger.error(
+                        f"Fetch phase failed for {fetch_url}: {res.status_code} {res.reason}"
+                    )
+                    raise RuntimeError(f"Fetch failed: {res.status_code} {res.reason}")
+                data = extract_response_data(source, res.json())
+                logger.debug(
+                    f"Successfully fetched data for match '{match}' from URL: {fetch_url}"
                 )
-                raise RuntimeError(f"Fetch failed: {res.status_code} {res.reason}")
-            data = extract_response_data(source, res.json())
-            logger.debug(
-                f"Successfully fetched data for match '{match}' from URL: {fetch_url}"
-            )
-            fetch_data.append(data)
+                fetch_data.append(data)
+            except requests.exceptions.Timeout as e:
+                logger.warning(
+                    f"Request timed out for source {source['name']} (url={fetch_url})"
+                )
+                continue
         logger.info(
             f"Fetched {len(fetch_data)} batches of data from source: {source['name']}"
         )
@@ -178,7 +184,7 @@ def do_discovery_then_fetch(source: dict) -> list:
         raise RuntimeError(f"Request failed for source {source['name']}: {e}")
     except requests.exceptions.Timeout as e:
         logger.warning(
-            f"Request timed out for source {source['name']} (url={source_url})"
+            f"Request timed out for source {source['name']} (url={discovery_url})"
         )
     except ValueError as e:
         logger.error(f"Invalid JSON response for source {source['name']}: {e}")

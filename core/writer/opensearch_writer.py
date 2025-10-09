@@ -33,14 +33,24 @@ class OpenSearchWriter:
         self.use_ssl = self.output_config.get("use_ssl", False)
         self.verify_certs = self.output_config.get("verify_certs", False)
 
-        self.username = os.getenv("OPENSEARCH_USERNAME")
-        self.password = os.getenv("OPENSEARCH_PASSWORD")
-        if not self.username or not self.password:
-            raise EnvironmentError("OpenSearch credentials not provided")
+        self.username = os.getenv("OPENSEARCH_USERNAME") or self.output_config.get(
+            "username"
+        )
+        self.password = os.getenv("OPENSEARCH_PASSWORD") or self.output_config.get(
+            "password"
+        )
+
+        auth = (
+            (self.username, self.password) if self.username and self.password else None
+        )
+        if not auth:
+            logger.warning(
+                "OpenSearch credentials not provided: Attempting connection without authentication."
+            )
 
         self.client = OpenSearch(
             hosts=[self.host],
-            http_auth=(self.username, self.password),
+            http_auth=auth,
             use_ssl=self.use_ssl,
             verify_certs=self.verify_certs,
         )

@@ -41,10 +41,10 @@ sources:
 output:
   destination: opensearch
   config:
-    host: ${OPENSEARCH_HOST:-http://host.docker.internal:9200}
+    host: ${OPENSEARCH_HOST:-http://localhost:9200}
     index: ${OPENSEARCH_INDEX:-external_data}
-    username: ${OPENSEARCH_USERNAME:-admin}
-    password: ${OPENSEARCH_PASSWORD:-admin}
+    # username: ${OPENSEARCH_USERNAME:-}
+    # password: ${OPENSEARCH_PASSWORD:-}
     use_ssl: false
     verify_certs: false
 notifications:

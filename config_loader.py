@@ -1,12 +1,13 @@
 import logging
 import os
 import re
-from typing import Any, Dict, Optional, Union
 
 import yaml
 
-ENV_VAR_PATTERN = re.compile(r"\${([^}^{:\-]+)(:-([^}]+))?}")
 logger = logging.getLogger(__name__)
+
+
+ENV_VAR_PATTERN = re.compile(r"\$\{([^}:\s]+)(?::-(.*?)?)?\}")
 
 
 class ConfigHandler:
@@ -207,18 +208,27 @@ class ConfigHandler:
         """
         value = loader.construct_scalar(node)
         match = ENV_VAR_PATTERN.fullmatch(value)
-        if match:
-            env_var = match.group(1)
-            fallback = match.group(3)
-            env_value = os.getenv(env_var, fallback or "")
-            if not os.getenv(env_var):
-                logger.warning(
-                    f"Environment variable '{env_var}' not found; using fallback '{fallback}'"
-                )
-            else:
-                logger.debug(f"Substituting environment variable: {env_var}")
+        if not match:
+            return value
+
+        env_var = match.group(1)
+        fallback = match.group(2)
+
+        env_value = os.getenv(env_var)
+        if env_value is not None:
+            logger.debug(f"Substituting environment variable: {env_var}")
             return env_value
-        return value
+
+        if fallback is not None:
+            logger.warning(
+                f"Environment variable '{env_var}' not found; using fallback '{fallback}'"
+            )
+            return fallback
+
+        logger.warning(
+            f"Environment variable '{env_var}' not found and no fallback provided; returning empty string"
+        )
+        return ""
 
     @classmethod
     def load_config_with_env_vars(cls, config_path: str) -> "ConfigHandler":

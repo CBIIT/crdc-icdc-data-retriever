@@ -1,12 +1,13 @@
 import logging
 import os
 import re
-from typing import Any, Dict, Optional, Union
 
 import yaml
 
-ENV_VAR_PATTERN = re.compile(r"\${([^}^{:\-]+)(:-([^}]*))?}")
 logger = logging.getLogger(__name__)
+
+
+ENV_VAR_PATTERN = re.compile(r"\$\{([^}:\s]+)(?::-(.*?)?)?\}")
 
 
 class ConfigHandler:
@@ -211,7 +212,7 @@ class ConfigHandler:
             return value
 
         env_var = match.group(1)
-        fallback = match.group(3)
+        fallback = match.group(2)
 
         env_value = os.getenv(env_var)
         if env_value is not None:

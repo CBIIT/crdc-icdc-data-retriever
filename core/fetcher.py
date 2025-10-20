@@ -18,8 +18,8 @@ def fetch_from_source(source: dict) -> Optional[list]:
     Returns:
         Optional[list]: Data fetched from the source, or None if no data was retrieved.
     """
-    source_name = source.get("name", "<unknown>")
-    source_type = source.get("type", "<unknown>")
+    source_name = source.get("name", "")
+    source_type = source.get("type", "").lower()
 
     logger.info(f"Starting fetch from source: {source_name} (type: {source_type})")
 
@@ -34,6 +34,9 @@ def fetch_from_source(source: dict) -> Optional[list]:
         elif source["type"] == "graphql":
             logger.debug(f"Using GraphQL fetch for source: {source_name}")
             data = fetch_graphql(source)
+        elif source["type"] == "rest_raw":
+            logger.debug(f"Using raw fetch for source: {source_name}")
+            data = fetch_raw(source)
         else:
             logger.warning(
                 f"Unknown source type '{source_type}' for source: {source_name}"
@@ -99,7 +102,52 @@ def fetch_direct(source: dict) -> list:
                 for item in data
                 if item.get(match_key, "").startswith(filter_prefix)
             ]
-        logger.info(f"Fetched {len(data)} records from source: {source_name}")
+        record_count = len(data) if isinstance(data, list) else 1
+        logger.info(f"Fetched {record_count} records from source: {source_name}")
+        return data
+    except requests.exceptions.RequestException as e:
+        logger.error(f"RequestException for source {source_name}: {e}")
+        raise RuntimeError(f"Request failed for source {source_name}: {e}")
+    except requests.exceptions.Timeout as e:
+        logger.warning(
+            f"Request timed out for source {source['name']} (url={source_url})"
+        )
+    except ValueError as e:
+        logger.error(f"Invalid JSON response for source {source_name}: {e}")
+        raise RuntimeError(f"Invalid JSON response for source {source_name}: {e}")
+
+
+def fetch_raw(source: dict) -> list:
+    """Fetches all data from the given REST endpoint without filtering or entity matching.
+    Intended for external sources that should be ingested as-is.
+
+    Args:
+        source (dict): Config for external data source.
+
+    Returns:
+        list: Data fetched from the source.
+
+    Raises:
+        RuntimeError: If the request fails or response is invalid.
+    """
+    source_name = source.get("name", "")
+
+    logger.info(f"Starting raw fetch for source: {source_name}")
+
+    try:
+        source_url = f"{source['api_base_url']}{source['endpoint']}"
+        logger.debug(f"Request URL: {source_url}")
+        response = requests.get(source_url, timeout=REQUEST_TIMEOUT)
+        if not response.ok:
+            logger.error(
+                f"Raw fetch failed for source '{source_name}': {response.status_code} {response.reason}"
+            )
+            raise RuntimeError(
+                f"Raw fetch failed: {response.status_code} {response.reason}"
+            )
+        data = extract_response_data(source, response.json())
+        record_count = len(data) if isinstance(data, list) else 1
+        logger.info(f"Fetched {record_count} records from source: {source_name}")
         return data
     except requests.exceptions.RequestException as e:
         logger.error(f"RequestException for source {source_name}: {e}")

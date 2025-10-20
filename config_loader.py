@@ -54,7 +54,12 @@ class ConfigHandler:
         if "project" not in self.config:
             raise ValueError("Missing 'project' key in config")
 
-        if "entity_source" not in self.config:
+        source_types = [
+            s.get("type", "").lower() for s in self.config.get("sources", [])
+        ]
+        if "entity_source" not in self.config and not all(
+            st == "rest_raw" for st in source_types
+        ):
             raise ValueError("Missing 'entity_source' key in config")
 
         ConfigHandler._require_dict_block(self.config, "output", "config")
@@ -146,21 +151,31 @@ class ConfigHandler:
         """
         logger.debug("Validating sources configuration block")
 
-        if not all(
-            key in source for key in ("name", "type", "api_base_url", "entity_id_key")
-        ):
-            raise ValueError(
-                "Each data source must define a 'name', 'type', 'api_base_url' and 'entity_id_key'"
-            )
+        # if not all(
+        #     key in source for key in ("name", "type", "api_base_url", "entity_id_key")
+        # ):
+        #     raise ValueError(
+        #         "Each data source must define a 'name', 'type', 'api_base_url' and 'entity_id_key'"
+        #     )
+
+        source_type = source.get("type", "").lower()
+        required_base_keys = ["name", "type", "api_base_url"]
+
+        if source_type != "rest_raw":
+            required_base_keys.append("entity_id_key")
+
+        for key in required_base_keys:
+            if key not in source:
+                raise ValueError(f"Missing required source key: {key}")
+
         if "discovery" not in source and "endpoint" not in source:
             raise ValueError("Source must define either 'endpoint' or 'discovery'")
 
-        source_type = source["type"].lower()
         if source_type == "graphql":
             if "query" not in source:
                 raise ValueError("'graphql' sources must have a valid 'query'")
 
-        if "discovery" in source:
+        if "discovery" in source and source_type != "rest_raw":
             discovery = source["discovery"]
             fetch = source.get("fetch", {})
             if not all(

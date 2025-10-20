@@ -79,7 +79,17 @@ class OpenSearchWriter:
             project = self.config.get("project")
             actions = []
 
-            for doc in documents:
+            if not documents:
+                logger.warning("No valid documents to index.")
+                return {"success": 0, "attempted": 0}
+
+            # defensive check for empty individual fetch results
+            valid_docs = [doc for doc in documents if doc]
+            if not valid_docs:
+                logger.warning("No valid documents to index.")
+                return {"success": 0, "attempted": 0}
+
+            for doc in valid_docs:
                 entity_id = doc.get("entity_id")
                 source_name = doc.get("CRDCLinks", [{}])[0].get("repository")
 

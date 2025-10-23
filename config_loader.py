@@ -102,10 +102,18 @@ class ConfigHandler:
 
         ConfigHandler._require_dict_block(output, "config", "output")
 
-        output_config_required_keys = ["host", "index"]
-        for key in output_config_required_keys:
-            if key not in output["config"]:
-                raise ValueError(f"Missing required 'output' config key: {key}")
+        if not any(key in output["config"] for key in ("host", "hosts")):
+            raise ValueError(
+                f"Missing required 'output' config key: must specify 'host' or 'hosts'"
+            )
+
+        if "index" not in output["config"]:
+            raise ValueError(f"Missing required 'output' config key: 'index'")
+
+        if "hosts" in output["config"] and "host" in output["config"]:
+            raise ValueError(
+                f"Both 'host' and 'hosts' specified; 'hosts' will take precedence"
+            )
 
     @staticmethod
     def _validate_notifications_config(notifications: dict) -> None:

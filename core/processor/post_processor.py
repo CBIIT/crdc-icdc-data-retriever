@@ -1,6 +1,7 @@
 import copy
 import logging
 import re
+from datetime import datetime, timezone
 from typing import Callable, Any
 
 from html2text import HTML2Text
@@ -118,3 +119,39 @@ def aggregate_tcia_series_data(
     )
 
     return result
+
+
+@post_processor
+def format_for_icdc(data: list[dict]) -> list[dict]:
+    """Formats fetched and processed data for ICDC ingestion.
+
+    Args:
+        data (list[dict]): List of fetched and processed data dicts.
+
+    Returns:
+        list[dict]: Formatted data ready for ICDC ingestion.
+    """
+    formatted_results = []
+
+    for document in data:
+        external_dataset = {}
+        image_collections = 0
+        external_repos = []
+
+        now_utc = datetime.now(timezone.utc)
+        external_dataset["timestamp"] = now_utc.isoformat(
+            timespec="milliseconds"
+        ).replace("+00:00", "Z")
+
+        external_dataset["clinical_study_designation"] = document.get("entity_id")
+        external_dataset["CRDCLinks"] = document.get("CRDCLinks", [])
+
+        for link in external_dataset["CRDCLinks"]:
+            image_collections += 1
+            external_repos.append(link.get("repository"))
+
+        external_dataset["numberOfImageCollections"] = image_collections
+        external_dataset["numberOfCRDCNodes"] = len(set(external_repos))
+        formatted_results.append(external_dataset)
+
+    return formatted_results

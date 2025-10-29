@@ -2,6 +2,11 @@ import json
 import logging
 import os
 
+from core.processor.post_processor_registry import (
+    get_post_processor,
+    apply_post_processor,
+)
+
 from opensearchpy import OpenSearch
 from opensearchpy.exceptions import OpenSearchException
 from opensearchpy.helpers import bulk
@@ -32,6 +37,9 @@ class OpenSearchWriter:
         self.hosts = self.output_config.get("hosts") or self.output_config.get("host")
         self.use_ssl = self.output_config.get("use_ssl", False)
         self.verify_certs = self.output_config.get("verify_certs", False)
+        self.post_processor = get_post_processor(
+            self.output_config.get("post_processor")
+        )
 
         self.username = os.getenv("OPENSEARCH_USERNAME") or self.output_config.get(
             "username"
@@ -106,31 +114,27 @@ class OpenSearchWriter:
 
         for client in self.clients:
             try:
-                documents = OpenSearchWriter._ensure_json_serializable(documents)
+                serializable_docs = OpenSearchWriter._ensure_json_serializable(
+                    documents
+                )
                 project = self.config.get("project")
                 actions = []
 
-                if not documents:
+                if not serializable_docs:
                     logger.warning("No valid documents to index.")
                     return {"success": 0, "attempted": 0}
 
                 # defensive check for empty individual fetch results
-                valid_docs = [doc for doc in documents if doc]
+                valid_docs = [doc for doc in serializable_docs if doc]
                 if not valid_docs:
                     logger.warning("No valid documents to index.")
                     return {"success": 0, "attempted": 0}
 
+                if self.post_processor:
+                    valid_docs = apply_post_processor(self.post_processor, valid_docs)
+
                 for doc in valid_docs:
-                    entity_id = doc.get("entity_id")
-                    source_name = doc.get("CRDCLinks", [{}])[0].get("repository")
-
-                    if not entity_id or not source_name:
-                        logger.warning(
-                            "Skipping document due to missing repository or entity ID."
-                        )
-                        continue
-
-                    doc_id = f"{project}_{source_name}_{entity_id}"
+                    doc_id = OpenSearchWriter.build_doc_id(doc, project)
                     actions.append(
                         {
                             "_index": self.index,
@@ -182,3 +186,32 @@ class OpenSearchWriter:
             except (TypeError, ValueError) as e:
                 logger.warning(f"Skipping unserializable document: {e}")
         return serializable_docs
+
+    @staticmethod
+    def build_doc_id(doc: dict, project: str) -> str:
+        """
+        Builds a document ID for indexing.
+
+        Args:
+            doc (dict): The document to index.
+            project (str): The project name.
+
+        Returns:
+            str: The constructed document ID.
+        """
+        # handle ICDC-style data
+        if "clinical_study_designation" in doc:
+            return f"{project}_{doc['clinical_study_designation']}"
+
+        # alternate ICDC format
+        if "entity_id" in doc:
+            return f"{project}_{doc['entity_id']}"
+
+        # hash fallback
+        import hashlib
+
+        doc_hash = hashlib.md5(json.dumps(doc, sort_keys=True).encode()).hexdigest()[
+            :12
+        ]
+
+        return f"{project}_{doc_hash}"

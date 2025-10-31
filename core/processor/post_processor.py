@@ -155,3 +155,30 @@ def format_for_icdc(data: list[dict]) -> list[dict]:
         formatted_results.append(external_dataset)
 
     return formatted_results
+
+
+@post_processor
+def format_for_ccdi(data: list[dict]) -> list[dict]:
+    """Formats fetched data for CCDI ingestion.
+
+    Args:
+        data (list[dict]): List of fetched data dicts.
+
+    Returns:
+        list[dict]: Formatted data ready for CCDI ingestion.
+    """
+    formatted_results = []
+
+    now_utc = datetime.now(timezone.utc)
+    timestamp = now_utc.isoformat(timespec="milliseconds").replace("+00:00", "Z")
+
+    for document in data:
+        formatted_results.append(
+            {
+                "timestamp": timestamp,
+                "repository": document.get("repository", "unknown"),
+                "data": document,
+            }
+        )
+
+    return formatted_results

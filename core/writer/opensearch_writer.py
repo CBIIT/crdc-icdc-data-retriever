@@ -33,14 +33,17 @@ class OpenSearchWriter:
         """
         self.config = config
         self.output_config = self.config.get("output", {}).get("config", {})
+
         self.index = self.output_config["index"]
-        self.hosts = self.output_config.get("hosts") or self.output_config.get("host")
+        hosts = self.output_config.get("hosts") or self.output_config.get("host")
+        self.hosts = [host for host in hosts if host]
+
         self.use_ssl = self.output_config.get("use_ssl", False)
         self.verify_certs = self.output_config.get("verify_certs", False)
+
         self.post_processor = get_post_processor(
             self.output_config.get("post_processor")
         )
-
         self.username = os.getenv("OPENSEARCH_USERNAME") or self.output_config.get(
             "username"
         )
@@ -66,16 +69,6 @@ class OpenSearchWriter:
                     )
                 logger.info(f"Connected to OpenSearch host: {host}")
                 self.clients.append(client)
-
-        elif isinstance(self.hosts, str):
-            client = self._make_client(self.hosts)
-            if not client.ping():
-                logger.error(f"Failed to connect to OpenSearch host: {self.hosts}")
-                raise ConnectionError(
-                    f"Failed to connect to OpenSearch host: {self.hosts}"
-                )
-            logger.info(f"Connected to OpenSearch host: {self.hosts}")
-            self.clients.append(client)
 
     def _make_client(self, host) -> OpenSearch:
         """
@@ -124,8 +117,18 @@ class OpenSearchWriter:
                     logger.warning("No valid documents to index.")
                     return {"success": 0, "attempted": 0}
 
+                # flatten list of documents in case any fetchers returned lists
+                # use generator if documents can be large
+                flat_docs = []
+                for doc in serializable_docs:
+                    if isinstance(doc, list):
+                        flat_docs.extend(doc)
+                    else:
+                        flat_docs.append(doc)
+
+                valid_docs = [doc for doc in flat_docs if doc]
+
                 # defensive check for empty individual fetch results
-                valid_docs = [doc for doc in serializable_docs if doc]
                 if not valid_docs:
                     logger.warning("No valid documents to index.")
                     return {"success": 0, "attempted": 0}
@@ -134,7 +137,7 @@ class OpenSearchWriter:
                     valid_docs = apply_post_processor(self.post_processor, valid_docs)
 
                 for doc in valid_docs:
-                    doc_id = OpenSearchWriter.build_doc_id(doc, project)
+                    doc_id = OpenSearchWriter._build_doc_id(doc, project)
                     actions.append(
                         {
                             "_index": self.index,
@@ -188,7 +191,7 @@ class OpenSearchWriter:
         return serializable_docs
 
     @staticmethod
-    def build_doc_id(doc: dict, project: str) -> str:
+    def _build_doc_id(doc: dict, project: str) -> str:
         """
         Builds a document ID for indexing.
 
@@ -207,11 +210,25 @@ class OpenSearchWriter:
         if "entity_id" in doc:
             return f"{project}_{doc['entity_id']}"
 
-        # hash fallback
+        # handle CCDI-style data
+        if "repository" in doc and "data" in doc:
+            if doc.get("repository", "") == "TCIA":
+                slug = doc.get("data", {}).get("slug")
+                coll_id = doc.get("data", {}).get("id")
+                key = slug or coll_id or "unknown"
+                return f"{project}_{doc['repository']}_{key}"
+            elif doc.get("repository", "") == "IDC":
+                data = doc.get("data", {})
+                collection_id = data.get("collection_id") or "unknown"
+                repo = doc.get("repository", "")
+                return f"{project}_{repo}_{collection_id}"
+
+        # hash fallback for all other projects/repositories
         import hashlib
 
         doc_hash = hashlib.md5(json.dumps(doc, sort_keys=True).encode()).hexdigest()[
             :12
         ]
+        repository = doc.get("repository", "") or "unknown"
 
-        return f"{project}_{doc_hash}"
+        return f"{project}_{repository}_{doc_hash}"

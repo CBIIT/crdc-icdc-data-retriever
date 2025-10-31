@@ -159,13 +159,6 @@ class ConfigHandler:
         """
         logger.debug("Validating sources configuration block")
 
-        # if not all(
-        #     key in source for key in ("name", "type", "api_base_url", "entity_id_key")
-        # ):
-        #     raise ValueError(
-        #         "Each data source must define a 'name', 'type', 'api_base_url' and 'entity_id_key'"
-        #     )
-
         source_type = source.get("type", "").lower()
         required_base_keys = ["name", "type", "api_base_url"]
 

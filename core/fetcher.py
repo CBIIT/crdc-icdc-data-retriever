@@ -49,6 +49,15 @@ def fetch_from_source(source: dict) -> Optional[list]:
             logger.info(
                 f"Successfully fetched data from source: {source_name} (records: {len(data) if isinstance(data, list) else 'n/a'})"
             )
+
+        # associate source name with fetched data
+        if isinstance(data, list):
+            for record in data:
+                if isinstance(record, dict):
+                    record["repository"] = source_name
+        elif isinstance(data, dict):
+            data["repository"] = source_name
+
         return data
     except Exception as e:
         logger.error(
@@ -131,24 +140,52 @@ def fetch_raw(source: dict) -> list:
         RuntimeError: If the request fails or response is invalid.
     """
     source_name = source.get("name", "")
-
     logger.info(f"Starting raw fetch for source: {source_name}")
 
+    all_data = []
+    page = 1
+    max_pages = None
+
     try:
-        source_url = f"{source['api_base_url']}{source['endpoint']}"
-        logger.debug(f"Request URL: {source_url}")
-        response = requests.get(source_url, timeout=REQUEST_TIMEOUT)
-        if not response.ok:
-            logger.error(
-                f"Raw fetch failed for source '{source_name}': {response.status_code} {response.reason}"
-            )
-            raise RuntimeError(
-                f"Raw fetch failed: {response.status_code} {response.reason}"
-            )
-        data = extract_response_data(source, response.json())
-        record_count = len(data) if isinstance(data, list) else 1
-        logger.info(f"Fetched {record_count} records from source: {source_name}")
-        return data
+        while True:
+            source_url = f"{source['api_base_url']}{source['endpoint']}"
+            logger.debug(f"Request URL: {source_url}")
+            response = requests.get(source_url, timeout=REQUEST_TIMEOUT)
+            if not response.ok:
+                logger.error(
+                    f"Raw fetch failed for source '{source_name}': {response.status_code} {response.reason}"
+                )
+                raise RuntimeError(
+                    f"Raw fetch failed: {response.status_code} {response.reason}"
+                )
+            data = extract_response_data(source, response.json())
+
+            # add current page data
+            if isinstance(data, list):
+                all_data.extend(data)
+            else:
+                all_data.append(data)
+
+            # check pagination info
+            link_header = response.headers.get("Link", "")
+            total_pages_header = response.headers.get("X-Wp-TotalPages", "")
+
+            if total_pages_header and max_pages is None:
+                max_pages = int(total_pages_header)
+
+            if not link_header or (max_pages and page >= max_pages):
+                break
+
+            if page >= 1000:
+                logger.warning(
+                    f"Aborting raw fetch for source {source_name} after 1000 pages (possible infinite loop)."
+                )
+                break
+
+            page += 1
+
+        logger.info(f"Fetched {len(all_data)} records from source: {source_name}")
+        return all_data
     except requests.exceptions.RequestException as e:
         logger.error(f"RequestException for source {source_name}: {e}")
         raise RuntimeError(f"Request failed for source {source_name}: {e}")

@@ -1,3 +1,4 @@
+import hashlib
 import json
 import logging
 import os
@@ -224,8 +225,6 @@ class OpenSearchWriter:
                 return f"{project}_{repo}_{collection_id}"
 
         # hash fallback for all other projects/repositories
-        import hashlib
-
         doc_hash = hashlib.md5(json.dumps(doc, sort_keys=True).encode()).hexdigest()[
             :12
         ]

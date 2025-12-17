@@ -112,7 +112,7 @@ class ConfigHandler:
 
         if "hosts" in output["config"] and "host" in output["config"]:
             raise ValueError(
-                f"Both 'host' and 'hosts' specified; 'hosts' will take precedence"
+                f"Invalid configuration: both 'host' and 'hosts' specified in 'output.config'. Please specify only one."
             )
 
     @staticmethod

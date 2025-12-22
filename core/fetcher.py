@@ -154,8 +154,8 @@ def fetch_raw(source: dict) -> list:
     source_url = None
 
     try:
+        source_url = f"{source['api_base_url']}{source['endpoint']}"
         while True:
-            source_url = f"{source['api_base_url']}{source['endpoint']}"
             logger.debug(f"Request URL: {source_url}")
             response = requests.get(source_url, timeout=REQUEST_TIMEOUT)
             if not response.ok:
@@ -180,7 +180,11 @@ def fetch_raw(source: dict) -> list:
             if total_pages_header and max_pages is None:
                 max_pages = int(total_pages_header)
 
-            if not link_header or (max_pages and page >= max_pages):
+            if max_pages and page >= max_pages:
+                break
+
+            next_url = get_next_link(link_header)
+            if not next_url:
                 break
 
             if page >= 1000:
@@ -190,6 +194,7 @@ def fetch_raw(source: dict) -> list:
                 break
 
             page += 1
+            source_url = next_url
 
         logger.info(f"Fetched {len(all_data)} records from source: {source_name}")
         return all_data

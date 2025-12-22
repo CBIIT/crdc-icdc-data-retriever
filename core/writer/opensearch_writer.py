@@ -37,7 +37,13 @@ class OpenSearchWriter:
 
         self.index = self.output_config["index"]
         hosts = self.output_config.get("hosts") or self.output_config.get("host")
-        self.hosts = [host for host in hosts if host]
+
+        if isinstance(hosts, str):
+            self.hosts = [hosts] if hosts else []
+        elif isinstance(hosts, list):
+            self.hosts = [host for host in hosts if host]
+        else:
+            self.hosts = []
 
         self.use_ssl = self.output_config.get("use_ssl", False)
         self.verify_certs = self.output_config.get("verify_certs", False)

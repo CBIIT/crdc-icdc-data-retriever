@@ -354,3 +354,33 @@ def extract_response_data(source: dict, response_json: dict) -> Union[list, dict
             return {}
         response_json = response_json.get(part, {})
     return response_json
+
+
+def get_next_link(link_header: str) -> Optional[str]:
+    """Parses the 'Link' HTTP header to extract the URL for the 'next' page.
+
+    Args:
+        link_header (str): The 'Link' HTTP header string.
+    Returns:
+        Optional[str]: The URL for the next page, or None if not found.
+    """
+    if not link_header:
+        return None
+
+    entries = [e.strip() for e in link_header.split(",")]
+    for entry in entries:
+        # expect format: <url>; rel="next"
+        if ";" not in entry:
+            continue
+        url_part, *params = [p.strip() for p in entry.split(";")]
+        if not (url_part.startswith("<") and url_part.endswith(">")):
+            continue
+
+        url = url_part[1:-1]
+        for p in params:
+            if p.startswith("rel="):
+                rel_value = p[4:].strip('"')
+                if rel_value == "next":
+                    return url
+
+    return None

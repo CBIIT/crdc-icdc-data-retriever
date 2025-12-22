@@ -114,30 +114,36 @@ def fetch_direct(source: dict) -> list:
         record_count = len(data) if isinstance(data, list) else 1
         logger.info(f"Fetched {record_count} records from source: {source_name}")
         return data
-    except requests.exceptions.RequestException as e:
-        logger.error(f"RequestException for source {source_name}: {e}")
-        raise RuntimeError(f"Request failed for source {source_name}: {e}")
     except requests.exceptions.Timeout as e:
         logger.warning(
             f"Request timed out for source {source['name']} (url={source_url})"
         )
+        return []
+    except requests.exceptions.RequestException as e:
+        logger.error(f"RequestException for source {source_name}: {e}")
+        raise RuntimeError(f"Request failed for source {source_name}: {e}") from e
     except ValueError as e:
         logger.error(f"Invalid JSON response for source {source_name}: {e}")
-        raise RuntimeError(f"Invalid JSON response for source {source_name}: {e}")
+        raise RuntimeError(
+            f"Invalid JSON response for source {source_name}: {e}"
+        ) from e
 
 
 def fetch_raw(source: dict) -> list:
-    """Fetches all data from the given REST endpoint without filtering or entity matching.
+    """Fetches data from the given REST endpoint without filtering or entity matching.
     Intended for external sources that should be ingested as-is.
+
+    On request timeout, returns whatever data has been fetched so far (e.g., partial
+    results in a paginated scenario).
 
     Args:
         source (dict): Config for external data source.
 
     Returns:
-        list: Data fetched from the source.
+        list: Data fetched from the source (may be partial if timeout occurs).
 
     Raises:
-        RuntimeError: If the request fails or response is invalid.
+        RuntimeError: If the request fails (non-timeout) or response is invalid.
     """
     source_name = source.get("name", "")
     logger.info(f"Starting raw fetch for source: {source_name}")
@@ -145,6 +151,7 @@ def fetch_raw(source: dict) -> list:
     all_data = []
     page = 1
     max_pages = None
+    source_url = None
 
     try:
         while True:
@@ -186,16 +193,20 @@ def fetch_raw(source: dict) -> list:
 
         logger.info(f"Fetched {len(all_data)} records from source: {source_name}")
         return all_data
-    except requests.exceptions.RequestException as e:
-        logger.error(f"RequestException for source {source_name}: {e}")
-        raise RuntimeError(f"Request failed for source {source_name}: {e}")
     except requests.exceptions.Timeout as e:
         logger.warning(
-            f"Request timed out for source {source['name']} (url={source_url})"
+            f"Request timed out for source {source_name} (url={source_url}); "
+            f"returning {len(all_data)} records fetched so far."
         )
+        return all_data
+    except requests.exceptions.RequestException as e:
+        logger.error(f"RequestException for source {source_name}: {e}")
+        raise RuntimeError(f"Request failed for source {source_name}: {e}") from e
     except ValueError as e:
         logger.error(f"Invalid JSON response for source {source_name}: {e}")
-        raise RuntimeError(f"Invalid JSON response for source {source_name}: {e}")
+        raise RuntimeError(
+            f"Invalid JSON response for source {source_name}: {e}"
+        ) from e
 
 
 def do_discovery_then_fetch(source: dict) -> list:
@@ -264,16 +275,19 @@ def do_discovery_then_fetch(source: dict) -> list:
             f"Fetched {len(fetch_data)} batches of data from source: {source['name']}"
         )
         return fetch_data
-    except requests.exceptions.RequestException as e:
-        logger.error(f"RequestException for source {source['name']}: {e}")
-        raise RuntimeError(f"Request failed for source {source['name']}: {e}")
     except requests.exceptions.Timeout as e:
         logger.warning(
             f"Request timed out for source {source['name']} (url={discovery_url})"
         )
+        return []
+    except requests.exceptions.RequestException as e:
+        logger.error(f"RequestException for source {source['name']}: {e}")
+        raise RuntimeError(f"Request failed for source {source['name']}: {e}") from e
     except ValueError as e:
         logger.error(f"Invalid JSON response for source {source['name']}: {e}")
-        raise RuntimeError(f"Invalid JSON response for source {source['name']}: {e}")
+        raise RuntimeError(
+            f"Invalid JSON response for source {source['name']}: {e}"
+        ) from e
 
 
 def fetch_graphql(source: dict) -> list:
@@ -306,16 +320,19 @@ def fetch_graphql(source: dict) -> list:
         data = response.json()
         logger.info(f"GraphQL fetch successful for source: {source['name']}")
         return extract_response_data(source, data)
-    except requests.exceptions.RequestException as e:
-        logger.error(f"RequestException for source {source['name']}: {e}")
-        raise RuntimeError(f"Request failed for source {source['name']}: {e}")
     except requests.exceptions.Timeout as e:
         logger.warning(
             f"Request timed out for source {source['name']} (url={source_url})"
         )
+        return []
+    except requests.exceptions.RequestException as e:
+        logger.error(f"RequestException for source {source['name']}: {e}")
+        raise RuntimeError(f"Request failed for source {source['name']}: {e}") from e
     except ValueError as e:
         logger.error(f"Invalid JSON response for source {source['name']}: {e}")
-        raise RuntimeError(f"Invalid JSON response for source {source['name']}: {e}")
+        raise RuntimeError(
+            f"Invalid JSON response for source {source['name']}: {e}"
+        ) from e
 
 
 def extract_response_data(source: dict, response_json: dict) -> Union[list, dict]:

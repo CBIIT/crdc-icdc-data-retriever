@@ -47,6 +47,7 @@ output:
     # password: ${OPENSEARCH_PASSWORD:-}
     use_ssl: false
     verify_certs: false
+    post_processor: format_for_icdc
 notifications:
   destination: sns
   config:

@@ -17,7 +17,9 @@ def test_init_success(mock_boto_client):
     mock_client_instance = MagicMock()
     mock_boto_client.return_value = mock_client_instance
 
-    notifier = SNSNotifier(topic_arn="arn:aws:sns:us-east-1:12345:test-topic")
+    notifier = SNSNotifier(
+        topic_arn="arn:aws:sns:us-east-1:12345:test-topic", region="us-east-1"
+    )
     assert notifier.topic_arn == "arn:aws:sns:us-east-1:12345:test-topic"
     assert notifier.region == "us-east-1"
 
@@ -35,7 +37,9 @@ def test_notify_success(mock_boto_client):
     mock_client_instance.publish.return_value = {"Message": "test message"}
     mock_boto_client.return_value = mock_client_instance
 
-    notifier = SNSNotifier(topic_arn="arn:aws:sns:us-east-1:12345:test-topic")
+    notifier = SNSNotifier(
+        topic_arn="arn:aws:sns:us-east-1:12345:test-topic", region="us-east-1"
+    )
     result = notifier.notify(subject="TEST", message="Test message.")
 
     assert result is True
@@ -48,7 +52,9 @@ def test_notify_failure(mock_boto_client, caplog):
     mock_client_instance.publish.side_effect = Exception("SNS failure")
     mock_boto_client.return_value = mock_client_instance
 
-    notifier = SNSNotifier(topic_arn="arn:aws:sns:us-east-1:12345:test-topic")
+    notifier = SNSNotifier(
+        topic_arn="arn:aws:sns:us-east-1:12345:test-topic", region="us-east-1"
+    )
     result = notifier.notify(subject="TEST", message="Test message.")
 
     assert result is False
@@ -63,4 +69,6 @@ def test_missing_credentials_raises_error(monkeypatch):
     with pytest.raises(
         EnvironmentError, match="Missing AWS credentials in environment variables"
     ):
-        SNSNotifier(topic_arn="arn:aws:sns:us-east-1:12345:test-topic")
+        SNSNotifier(
+            topic_arn="arn:aws:sns:us-east-1:12345:test-topic", region="us-east-1"
+        )

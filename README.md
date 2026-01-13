@@ -1,6 +1,6 @@
 # Data Retriever Service
 
-[![Coverage Status](https://coveralls.io/repos/github/CBIIT/crdc-icdc-data-retriever/badge.svg?branch=main)](https://coveralls.io/github/CBIIT/crdc-icdc-data-retriever?branch=main)
+[![Coverage Status](https://coveralls.io/repos/github/CBIIT/crdc-icdc-data-retriever/badge.svg?branch=coverage-report)](https://coveralls.io/github/CBIIT/crdc-icdc-data-retriever?branch=coverage-report)
 
 A YAML-configurable service that fetches data from multiple external sources, maps them to internal entities (ex: ICDC study), provides optional post-processing and stores the results in OpenSearch.
 

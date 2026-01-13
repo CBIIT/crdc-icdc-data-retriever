@@ -2,8 +2,10 @@ name: Coverage (Pytest + Coveralls)
 
 on:
   push:
-    branches: [ coverage-report ]
+    branches: [ develop, main ]
   pull_request:
+    branches: [ develop, main ]
+  workflow_dispatch:
 
 jobs:
   test-and-coveralls:

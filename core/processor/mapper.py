@@ -123,7 +123,7 @@ def collect_mappings(
             logger.info(f"Mapped {len(mappings)} collections to entity '{entity_id}'")
         else:
             logger.debug(
-                f"No mappings found for entity '{entity.get(entity_id_key, "<unknown>")}'"
+                f"No mappings found for entity '{entity.get(entity_id_key, '<unknown>')}'"
             )
 
     return crdc_mappings

@@ -3,7 +3,7 @@ entity_source: ICDC
 sources:
   - name: IDC
     type: rest
-    api_base_url: https://api.imaging.datacommons.cancer.gov/v1
+    api_base_url: https://api.imaging.datacommons.cancer.gov/v2
     dataset_base_url: https://portal.imaging.datacommons.cancer.gov/explore/filters/?collection_id={collection_id}
     dataset_base_url_param: collection_id
     endpoint: /collections
@@ -43,13 +43,13 @@ output:
   config:
     host: ${OPENSEARCH_HOST:-http://localhost:9200}
     index: ${OPENSEARCH_INDEX:-external_data}
-    # username: ${OPENSEARCH_USERNAME:-}
-    # password: ${OPENSEARCH_PASSWORD:-}
+    username: ${OPENSEARCH_USERNAME:-}
+    password: ${OPENSEARCH_PASSWORD:-}
     use_ssl: false
     verify_certs: false
     post_processor: format_for_icdc
-notifications:
-  destination: sns
-  config:
-    topic_arn: ${SNS_TOPIC_ARN}
-    region: ${SNS_REGION:-us-east-1}
+# notifications:
+#   destination: sns
+#   config:
+#     topic_arn: ${SNS_TOPIC_ARN}
+#     region: ${SNS_REGION:-us-east-1}

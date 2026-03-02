@@ -43,7 +43,7 @@ def fetch_from_source(source: dict) -> Optional[list]:
             )
             return None
 
-        if data is None:
+        if data is None or data == []:
             logger.warning(f"No data returned from source: {source_name}")
         else:
             logger.info(

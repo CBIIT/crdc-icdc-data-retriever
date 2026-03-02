@@ -43,7 +43,7 @@ def run_dispatcher(config: dict, parallel: bool = False) -> list:
                 raw_data.extend(data)
             else:
                 raw_data.append(data)
-        logger.info(f"Fetched raw data from {len(raw_data)} sources.")
+        logger.info(f"Fetched {len(raw_data)} raw records.")
         return raw_data
 
     logger.info("Beginning entity matching...")
@@ -71,7 +71,10 @@ def fetch_all(sources: list) -> dict:
         name = source.get("name", "<unknown>")
         try:
             results[name] = fetch_from_source(source)
-            logger.info(f"Fetched data from source: {name}")
+            if results[name]:
+                logger.info(f"Fetched data from source: {name}")
+            else:
+                logger.warning(f"No data returned from source: {name}")
         except Exception as e:
             logger.error(f"Failed to fetch from source '{name}': {e}")
             results[name] = None

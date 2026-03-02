@@ -101,19 +101,38 @@ class ConfigHandler:
             )
 
         ConfigHandler._require_dict_block(output, "config", "output")
+        config_block = output["config"]
 
-        if not any(key in output["config"] for key in ("host", "hosts")):
+        if not any(key in config_block for key in ("host", "hosts")):
             raise ValueError(
                 f"Missing required 'output' config key: must specify 'host' or 'hosts'"
             )
 
-        if "index" not in output["config"]:
+        if "index" not in config_block:
             raise ValueError(f"Missing required 'output' config key: 'index'")
 
-        if "hosts" in output["config"] and "host" in output["config"]:
+        if "hosts" in config_block and "host" in config_block:
             raise ValueError(
                 f"Invalid configuration: both 'host' and 'hosts' specified in 'output.config'. Please specify only one."
             )
+
+        if "host" in config_block:
+            host = config_block.get("host")
+            if not isinstance(host, str) or not host.strip():
+                raise ValueError(
+                    "Invalid 'host' value in 'output.config': expected a non-empty string"
+                )
+        if "hosts" in config_block:
+            hosts = config_block.get("hosts")
+            if not isinstance(hosts, list) or not hosts:
+                raise ValueError(
+                    "Invalid 'hosts' value in 'output.config': expected a non-empty list of host strings"
+                )
+            for host in hosts:
+                if not isinstance(host, str) or not host.strip():
+                    raise ValueError(
+                        "Invalid host entry in 'hosts' list: expected non-empty strings"
+                    )
 
     @staticmethod
     def _validate_notifications_config(notifications: dict) -> None:

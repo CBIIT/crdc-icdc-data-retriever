@@ -69,7 +69,10 @@ def test_validate_missing_project_key(valid_config):
 def test_validate_missing_output_config_key(valid_config):
     invalid_config = copy.deepcopy(valid_config)
     del invalid_config["output"]["config"]["host"]
-    with pytest.raises(ValueError, match="Missing required 'output' config key: host"):
+    with pytest.raises(
+        ValueError,
+        match="Missing required 'output' config key: must specify 'host' or 'hosts'",
+    ):
         ConfigHandler(invalid_config).validate()
 
 
@@ -88,7 +91,7 @@ def test_validate_missing_source_fields(valid_config):
     invalid_config["sources"][0] = {"name": "invalid_source"}
     with pytest.raises(
         ValueError,
-        match="Each data source must define a 'name', 'type', 'api_base_url' and 'entity_id_key'",
+        match="Missing required source key: ",
     ):
         ConfigHandler(invalid_config).validate()
 

@@ -29,7 +29,6 @@ class OpenSearchWriter:
             config (dict): App config data.
 
         Raises:
-            EnvironmentError: If required OpenSearch credentials are missing.
             ConnectionError: If client cannot connect to OpenSearch host.
         """
         self.config = config

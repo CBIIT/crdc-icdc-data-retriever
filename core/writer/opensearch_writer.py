@@ -44,6 +44,10 @@ class OpenSearchWriter:
         else:
             self.hosts = []
 
+        if not self.hosts:
+            logger.error("No valid OpenSearch host(s) provided in configuration.")
+            raise ValueError("No valid OpenSearch host(s) provided in configuration.")
+
         self.use_ssl = self.output_config.get("use_ssl", False)
         self.verify_certs = self.output_config.get("verify_certs", False)
 
@@ -67,14 +71,20 @@ class OpenSearchWriter:
         self.clients = []
         if isinstance(self.hosts, list):
             for host in self.hosts:
-                client = self._make_client(host)
-                if not client.ping():
-                    logger.error(f"Failed to connect to OpenSearch host: {host}")
-                    raise ConnectionError(
-                        f"Failed to connect to OpenSearch host: {host}"
-                    )
+                try:
+                    client = self._make_client(host)
+                    if not client.ping():
+                        logger.error(f"Failed to ping OpenSearch host: {host}")
+                        continue
+                except OpenSearchException as e:
+                    logger.error(f"Failed to connect to OpenSearch host: {host} - {e}")
+                    continue
                 logger.info(f"Connected to OpenSearch host: {host}")
                 self.clients.append(client)
+
+        if self.hosts and not self.clients:
+            logger.error("Failed to connect to any OpenSearch hosts.")
+            raise ConnectionError("Failed to connect to any OpenSearch hosts.")
 
     def _make_client(self, host) -> OpenSearch:
         """

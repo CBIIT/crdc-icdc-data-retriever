@@ -188,8 +188,12 @@ class ConfigHandler:
             if key not in source:
                 raise ValueError(f"Missing required source key: {key}")
 
-        if "discovery" not in source and "endpoint" not in source:
-            raise ValueError("Source must define either 'endpoint' or 'discovery'")
+        if source_type == "rest_raw":
+            if "endpoint" not in source:
+                raise ValueError("Source of type 'rest_raw' must define an 'endpoint'")
+        else:
+            if "discovery" not in source and "endpoint" not in source:
+                raise ValueError("Source must define either 'endpoint' or 'discovery'")
 
         if source_type == "graphql":
             if "query" not in source:

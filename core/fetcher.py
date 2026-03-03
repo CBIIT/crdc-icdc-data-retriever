@@ -178,7 +178,12 @@ def fetch_raw(source: dict) -> list:
             total_pages_header = response.headers.get("X-Wp-TotalPages", "")
 
             if total_pages_header and max_pages is None:
-                max_pages = int(total_pages_header)
+                try:
+                    max_pages = int(total_pages_header)
+                except ValueError:
+                    logger.warning(
+                        f"Invalid X-Wp-TotalPages header value '{total_pages_header}' for source {source_name}; falling back to Link header parsing for pagination."
+                    )
 
             if max_pages and page >= max_pages:
                 break

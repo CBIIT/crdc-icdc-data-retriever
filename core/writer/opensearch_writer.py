@@ -123,26 +123,32 @@ class OpenSearchWriter:
 
         for client in self.clients:
             try:
-                serializable_docs = OpenSearchWriter._ensure_json_serializable(
-                    documents
-                )
                 project = self.config.get("project")
                 actions = []
-
-                if not serializable_docs:
-                    logger.warning("No valid documents to index.")
-                    return {"success": 0, "attempted": 0}
 
                 # flatten list of documents in case any fetchers returned lists
                 # use generator if documents can be large
                 flat_docs = []
-                for doc in serializable_docs:
+                for doc in documents:
                     if isinstance(doc, list):
                         flat_docs.extend(doc)
                     else:
                         flat_docs.append(doc)
 
-                valid_docs = [doc for doc in flat_docs if doc]
+                if not flat_docs:
+                    logger.warning("No documents to index after flattening input.")
+                    return {"success": 0, "attempted": 0}
+
+                non_empty_docs = [doc for doc in flat_docs if doc]
+                skipped_empty = len(flat_docs) - len(non_empty_docs)
+
+                serializable_docs = OpenSearchWriter._ensure_json_serializable(
+                    non_empty_docs
+                )
+                skipped_unserializable = len(non_empty_docs) - len(serializable_docs)
+
+                valid_docs = [doc for doc in serializable_docs if isinstance(doc, dict)]
+                skipped_non_dict = len(serializable_docs) - len(valid_docs)
 
                 # defensive check for empty individual fetch results
                 if not valid_docs:
@@ -150,7 +156,12 @@ class OpenSearchWriter:
                     return {"success": 0, "attempted": 0}
 
                 if self.post_processor:
+                    pre_post_processor_count = len(valid_docs)
                     valid_docs = apply_post_processor(self.post_processor, valid_docs)
+                    valid_docs = valid_docs or []
+                    skipped_post_processor = pre_post_processor_count - len(valid_docs)
+                else:
+                    skipped_post_processor = 0
 
                 for doc in valid_docs:
                     doc_id = OpenSearchWriter._build_doc_id(doc, project)
@@ -162,17 +173,37 @@ class OpenSearchWriter:
                         }
                     )
 
-                skipped = len(documents) - len(actions)
+                skipped = (
+                    skipped_empty
+                    + skipped_unserializable
+                    + skipped_non_dict
+                    + skipped_post_processor
+                )
                 if skipped:
+                    reasons = []
+                    if skipped_empty:
+                        reasons.append(f"{skipped_empty} empty/null")
+                    if skipped_unserializable:
+                        reasons.append(f"{skipped_unserializable} unserializable")
+                    if skipped_non_dict:
+                        reasons.append(f"{skipped_non_dict} non-dict")
+                    if skipped_post_processor:
+                        reasons.append(
+                            f"{skipped_post_processor} filtered by post-processor"
+                        )
                     logger.warning(
-                        f"Skipped {skipped} documents due to missing required fields."
+                        f"Skipped {skipped} flattened document(s) before indexing ({', '.join(reasons)})."
                     )
+
+                if not actions:
+                    logger.warning("No valid documents remained after validation.")
+                    return {"success": 0, "attempted": 0}
 
                 success, _ = bulk(client, actions)
                 total_attempted += len(actions)
                 total_success += success
                 logger.info(
-                    f"Wrote {success} out of {len(documents)} documents to index {self.index} on {client.transport.hosts[0]['host']}"
+                    f"Wrote {success} out of {len(actions)} documents to index {self.index} on {client.transport.hosts[0]['host']}"
                 )
             except OpenSearchException as e:
                 logger.error(

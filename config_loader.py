@@ -54,7 +54,12 @@ class ConfigHandler:
         if "project" not in self.config:
             raise ValueError("Missing 'project' key in config")
 
-        if "entity_source" not in self.config:
+        source_types = [
+            s.get("type", "").lower() for s in self.config.get("sources", [])
+        ]
+        if "entity_source" not in self.config and not all(
+            st == "rest_raw" for st in source_types
+        ):
             raise ValueError("Missing 'entity_source' key in config")
 
         ConfigHandler._require_dict_block(self.config, "output", "config")
@@ -96,11 +101,38 @@ class ConfigHandler:
             )
 
         ConfigHandler._require_dict_block(output, "config", "output")
+        config_block = output["config"]
 
-        output_config_required_keys = ["host", "index"]
-        for key in output_config_required_keys:
-            if key not in output["config"]:
-                raise ValueError(f"Missing required 'output' config key: {key}")
+        if not any(key in config_block for key in ("host", "hosts")):
+            raise ValueError(
+                f"Missing required 'output' config key: must specify 'host' or 'hosts'"
+            )
+
+        if "index" not in config_block:
+            raise ValueError(f"Missing required 'output' config key: 'index'")
+
+        if "hosts" in config_block and "host" in config_block:
+            raise ValueError(
+                f"Invalid configuration: both 'host' and 'hosts' specified in 'output.config'. Please specify only one."
+            )
+
+        if "host" in config_block:
+            host = config_block.get("host")
+            if not isinstance(host, str) or not host.strip():
+                raise ValueError(
+                    "Invalid 'host' value in 'output.config': expected a non-empty string"
+                )
+        if "hosts" in config_block:
+            hosts = config_block.get("hosts")
+            if not isinstance(hosts, list) or not hosts:
+                raise ValueError(
+                    "Invalid 'hosts' value in 'output.config': expected a non-empty list of host strings"
+                )
+            for host in hosts:
+                if not isinstance(host, str) or not host.strip():
+                    raise ValueError(
+                        "Invalid host entry in 'hosts' list: expected non-empty strings"
+                    )
 
     @staticmethod
     def _validate_notifications_config(notifications: dict) -> None:
@@ -146,21 +178,28 @@ class ConfigHandler:
         """
         logger.debug("Validating sources configuration block")
 
-        if not all(
-            key in source for key in ("name", "type", "api_base_url", "entity_id_key")
-        ):
-            raise ValueError(
-                "Each data source must define a 'name', 'type', 'api_base_url' and 'entity_id_key'"
-            )
-        if "discovery" not in source and "endpoint" not in source:
-            raise ValueError("Source must define either 'endpoint' or 'discovery'")
+        source_type = source.get("type", "").lower()
+        required_base_keys = ["name", "type", "api_base_url"]
 
-        source_type = source["type"].lower()
+        if source_type != "rest_raw":
+            required_base_keys.append("entity_id_key")
+
+        for key in required_base_keys:
+            if key not in source:
+                raise ValueError(f"Missing required source key: {key}")
+
+        if source_type == "rest_raw":
+            if "endpoint" not in source:
+                raise ValueError("Source of type 'rest_raw' must define an 'endpoint'")
+        else:
+            if "discovery" not in source and "endpoint" not in source:
+                raise ValueError("Source must define either 'endpoint' or 'discovery'")
+
         if source_type == "graphql":
             if "query" not in source:
                 raise ValueError("'graphql' sources must have a valid 'query'")
 
-        if "discovery" in source:
+        if "discovery" in source and source_type != "rest_raw":
             discovery = source["discovery"]
             fetch = source.get("fetch", {})
             if not all(

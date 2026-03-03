@@ -53,9 +53,9 @@ def fetch_from_source(source: dict) -> Optional[list]:
         # associate source name with fetched data
         if isinstance(data, list):
             for record in data:
-                if isinstance(record, dict):
+                if isinstance(record, dict) and "repository" not in record:
                     record["repository"] = source_name
-        elif isinstance(data, dict):
+        elif isinstance(data, dict) and "repository" not in data:
             data["repository"] = source_name
 
         return data

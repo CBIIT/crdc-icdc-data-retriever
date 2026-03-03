@@ -1,0 +1,28 @@
+project: CCDI_HUB
+sources:
+  - name: IDC
+    type: rest_raw
+    api_base_url: https://api.imaging.datacommons.cancer.gov/v1
+    endpoint: /collections
+    response_data_key: collections
+  - name: TCIA
+    type: rest_raw
+    api_base_url: https://cancerimagingarchive.net/api/v1
+    endpoint: /collections
+output:
+  destination: opensearch
+  config:
+    hosts:
+      - ${CCDI_HUB_OPENSEARCH_HOST_DEV}
+      - ${CCDI_HUB_OPENSEARCH_HOST_QA}
+      - ${CCDI_HUB_OPENSEARCH_HOST_STAGE}
+      - ${CCDI_HUB_OPENSEARCH_HOST_PROD}
+    index: idc_tcia
+    use_ssl: false
+    verify_certs: false
+    post_processor: format_for_ccdi
+notifications:
+  destination: sns
+  config:
+    topic_arn: ${SNS_TOPIC_ARN}
+    region: ${SNS_REGION:-us-east-1}

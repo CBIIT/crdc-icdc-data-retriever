@@ -18,8 +18,8 @@ def fetch_from_source(source: dict) -> Optional[list]:
     Returns:
         Optional[list]: Data fetched from the source, or None if no data was retrieved.
     """
-    source_name = source.get("name", "<unknown>")
-    source_type = source.get("type", "<unknown>")
+    source_name = source.get("name", "")
+    source_type = source.get("type", "").lower()
 
     logger.info(f"Starting fetch from source: {source_name} (type: {source_type})")
 
@@ -31,21 +31,33 @@ def fetch_from_source(source: dict) -> Optional[list]:
             else:
                 logger.debug(f"Using direct fetch for source: {source_name}")
                 data = fetch_direct(source)
-        elif source["type"] == "graphql":
+        elif source_type == "graphql":
             logger.debug(f"Using GraphQL fetch for source: {source_name}")
             data = fetch_graphql(source)
+        elif source_type == "rest_raw":
+            logger.debug(f"Using raw fetch for source: {source_name}")
+            data = fetch_raw(source)
         else:
             logger.warning(
                 f"Unknown source type '{source_type}' for source: {source_name}"
             )
             return None
 
-        if data is None:
+        if data is None or data == []:
             logger.warning(f"No data returned from source: {source_name}")
         else:
             logger.info(
                 f"Successfully fetched data from source: {source_name} (records: {len(data) if isinstance(data, list) else 'n/a'})"
             )
+
+        # associate source name with fetched data
+        if isinstance(data, list):
+            for record in data:
+                if isinstance(record, dict) and "repository" not in record:
+                    record["repository"] = source_name
+        elif isinstance(data, dict) and "repository" not in data:
+            data["repository"] = source_name
+
         return data
     except Exception as e:
         logger.error(
@@ -99,18 +111,112 @@ def fetch_direct(source: dict) -> list:
                 for item in data
                 if item.get(match_key, "").startswith(filter_prefix)
             ]
-        logger.info(f"Fetched {len(data)} records from source: {source_name}")
+        record_count = len(data) if isinstance(data, list) else 1
+        logger.info(f"Fetched {record_count} records from source: {source_name}")
         return data
-    except requests.exceptions.RequestException as e:
-        logger.error(f"RequestException for source {source_name}: {e}")
-        raise RuntimeError(f"Request failed for source {source_name}: {e}")
     except requests.exceptions.Timeout as e:
         logger.warning(
             f"Request timed out for source {source['name']} (url={source_url})"
         )
+        return []
+    except requests.exceptions.RequestException as e:
+        logger.error(f"RequestException for source {source_name}: {e}")
+        raise RuntimeError(f"Request failed for source {source_name}: {e}") from e
     except ValueError as e:
         logger.error(f"Invalid JSON response for source {source_name}: {e}")
-        raise RuntimeError(f"Invalid JSON response for source {source_name}: {e}")
+        raise RuntimeError(
+            f"Invalid JSON response for source {source_name}: {e}"
+        ) from e
+
+
+def fetch_raw(source: dict) -> list:
+    """Fetches data from the given REST endpoint without filtering or entity matching.
+    Intended for external sources that should be ingested as-is.
+
+    On request timeout, returns whatever data has been fetched so far (e.g., partial
+    results in a paginated scenario).
+
+    Args:
+        source (dict): Config for external data source.
+
+    Returns:
+        list: Data fetched from the source (may be partial if timeout occurs).
+
+    Raises:
+        RuntimeError: If the request fails (non-timeout) or response is invalid.
+    """
+    source_name = source.get("name", "")
+    logger.info(f"Starting raw fetch for source: {source_name}")
+
+    all_data = []
+    page = 1
+    max_pages = None
+    source_url = None
+
+    try:
+        source_url = f"{source['api_base_url']}{source['endpoint']}"
+        while True:
+            logger.debug(f"Request URL: {source_url}")
+            response = requests.get(source_url, timeout=REQUEST_TIMEOUT)
+            if not response.ok:
+                logger.error(
+                    f"Raw fetch failed for source '{source_name}': {response.status_code} {response.reason}"
+                )
+                raise RuntimeError(
+                    f"Raw fetch failed: {response.status_code} {response.reason}"
+                )
+            data = extract_response_data(source, response.json())
+
+            # add current page data
+            if isinstance(data, list):
+                all_data.extend(data)
+            else:
+                all_data.append(data)
+
+            # check pagination info
+            link_header = response.headers.get("Link", "")
+            total_pages_header = response.headers.get("X-Wp-TotalPages", "")
+
+            if total_pages_header and max_pages is None:
+                try:
+                    max_pages = int(total_pages_header)
+                except ValueError:
+                    logger.warning(
+                        f"Invalid X-Wp-TotalPages header value '{total_pages_header}' for source {source_name}; falling back to Link header parsing for pagination."
+                    )
+
+            if max_pages and page >= max_pages:
+                break
+
+            next_url = get_next_link(link_header)
+            if not next_url:
+                break
+
+            if page >= 1000:
+                logger.warning(
+                    f"Aborting raw fetch for source {source_name} after 1000 pages (possible infinite loop)."
+                )
+                break
+
+            page += 1
+            source_url = next_url
+
+        logger.info(f"Fetched {len(all_data)} records from source: {source_name}")
+        return all_data
+    except requests.exceptions.Timeout as e:
+        logger.warning(
+            f"Request timed out for source {source_name} (url={source_url}); "
+            f"returning {len(all_data)} records fetched so far."
+        )
+        return all_data
+    except requests.exceptions.RequestException as e:
+        logger.error(f"RequestException for source {source_name}: {e}")
+        raise RuntimeError(f"Request failed for source {source_name}: {e}") from e
+    except ValueError as e:
+        logger.error(f"Invalid JSON response for source {source_name}: {e}")
+        raise RuntimeError(
+            f"Invalid JSON response for source {source_name}: {e}"
+        ) from e
 
 
 def do_discovery_then_fetch(source: dict) -> list:
@@ -179,16 +285,19 @@ def do_discovery_then_fetch(source: dict) -> list:
             f"Fetched {len(fetch_data)} batches of data from source: {source['name']}"
         )
         return fetch_data
-    except requests.exceptions.RequestException as e:
-        logger.error(f"RequestException for source {source['name']}: {e}")
-        raise RuntimeError(f"Request failed for source {source['name']}: {e}")
     except requests.exceptions.Timeout as e:
         logger.warning(
             f"Request timed out for source {source['name']} (url={discovery_url})"
         )
+        return []
+    except requests.exceptions.RequestException as e:
+        logger.error(f"RequestException for source {source['name']}: {e}")
+        raise RuntimeError(f"Request failed for source {source['name']}: {e}") from e
     except ValueError as e:
         logger.error(f"Invalid JSON response for source {source['name']}: {e}")
-        raise RuntimeError(f"Invalid JSON response for source {source['name']}: {e}")
+        raise RuntimeError(
+            f"Invalid JSON response for source {source['name']}: {e}"
+        ) from e
 
 
 def fetch_graphql(source: dict) -> list:
@@ -221,16 +330,19 @@ def fetch_graphql(source: dict) -> list:
         data = response.json()
         logger.info(f"GraphQL fetch successful for source: {source['name']}")
         return extract_response_data(source, data)
-    except requests.exceptions.RequestException as e:
-        logger.error(f"RequestException for source {source['name']}: {e}")
-        raise RuntimeError(f"Request failed for source {source['name']}: {e}")
     except requests.exceptions.Timeout as e:
         logger.warning(
             f"Request timed out for source {source['name']} (url={source_url})"
         )
+        return []
+    except requests.exceptions.RequestException as e:
+        logger.error(f"RequestException for source {source['name']}: {e}")
+        raise RuntimeError(f"Request failed for source {source['name']}: {e}") from e
     except ValueError as e:
         logger.error(f"Invalid JSON response for source {source['name']}: {e}")
-        raise RuntimeError(f"Invalid JSON response for source {source['name']}: {e}")
+        raise RuntimeError(
+            f"Invalid JSON response for source {source['name']}: {e}"
+        ) from e
 
 
 def extract_response_data(source: dict, response_json: dict) -> Union[list, dict]:
@@ -252,3 +364,33 @@ def extract_response_data(source: dict, response_json: dict) -> Union[list, dict
             return {}
         response_json = response_json.get(part, {})
     return response_json
+
+
+def get_next_link(link_header: str) -> Optional[str]:
+    """Parses the 'Link' HTTP header to extract the URL for the 'next' page.
+
+    Args:
+        link_header (str): The 'Link' HTTP header string.
+    Returns:
+        Optional[str]: The URL for the next page, or None if not found.
+    """
+    if not link_header:
+        return None
+
+    entries = [e.strip() for e in link_header.split(",")]
+    for entry in entries:
+        # expect format: <url>; rel="next"
+        if ";" not in entry:
+            continue
+        url_part, *params = [p.strip() for p in entry.split(";")]
+        if not (url_part.startswith("<") and url_part.endswith(">")):
+            continue
+
+        url = url_part[1:-1]
+        for p in params:
+            if p.startswith("rel="):
+                rel_value = p[4:].strip('"')
+                if rel_value == "next":
+                    return url
+
+    return None

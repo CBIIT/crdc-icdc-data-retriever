@@ -94,5 +94,7 @@ def test_bulk_write_error(mock_opensearch, mock_bulk, mock_config):
         {"entity_id": "TEST2", "CRDCLinks": [{"repository": "test_repo_2"}]},
     ]
 
-    with pytest.raises(RuntimeError, match="Failed to perform bulk write"):
+    with pytest.raises(
+        RuntimeError, match="Bulk write failed on all configured OpenSearch hosts."
+    ):
         writer.bulk_write_documents(documents)

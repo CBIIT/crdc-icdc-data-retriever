@@ -31,10 +31,10 @@ def fetch_from_source(source: dict) -> Optional[list]:
             else:
                 logger.debug(f"Using direct fetch for source: {source_name}")
                 data = fetch_direct(source)
-        elif source["type"] == "graphql":
+        elif source_type == "graphql":
             logger.debug(f"Using GraphQL fetch for source: {source_name}")
             data = fetch_graphql(source)
-        elif source["type"] == "rest_raw":
+        elif source_type == "rest_raw":
             logger.debug(f"Using raw fetch for source: {source_name}")
             data = fetch_raw(source)
         else:

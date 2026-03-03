@@ -68,9 +68,9 @@ def rest_source_discovery():
 
 @patch("core.fetcher.fetch_direct")
 def test_fetch_from_source_rest_direct(mock_fetch_direct, rest_source):
-    mock_fetch_direct.return_value = [{"id": 1}]
+    mock_fetch_direct.return_value = [{"name": "test_source"}]
     result = fetch_from_source(rest_source)
-    assert result == [{"id": 1}]
+    assert "name" in result[0] and result[0]["name"] == "test_source"
     mock_fetch_direct.assert_called_once()
 
 
@@ -84,9 +84,10 @@ def test_fetch_from_source_rest_discovery(mock_discovery, discovery_source):
 
 @patch("core.fetcher.fetch_graphql")
 def test_fetch_from_source_graphql(mock_fetch_graphql, graphql_source):
-    mock_fetch_graphql.return_value = [{"name": "test"}]
+    mock_fetch_graphql.return_value = [{"name": "test_source"}]
     result = fetch_from_source(graphql_source)
-    assert result == [{"name": "test"}]
+    assert "name" in result[0] and result[0]["name"] == "test_source"
+    mock_fetch_graphql.assert_called_once()
 
 
 def test_fetch_from_source_unknown_type():

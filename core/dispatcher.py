@@ -21,13 +21,32 @@ def run_dispatcher(config: dict, parallel: bool = False) -> list:
         list: List of external data mappings associated with entities.
     """
     logger.info("Starting dispatcher run...")
-    entity_source_name = config["entity_source"]
     sources = config["sources"]
+    entity_source_name = config.get("entity_source")
+
+    # check if in raw fetch mode
+    all_raw = all(source.get("type", "").lower() == "rest_raw" for source in sources)
 
     logger.info("Fetching all source data...")
     fetched_data = fetch_all_parallel(sources) if parallel else fetch_all(sources)
-    logger.info("Fetching complete - beginning entity matching...")
+    logger.info("Fetching complete!")
 
+    # bypass entity matching if all sources are raw fetches
+    if all_raw:
+        logger.info("Detected raw fetch configuration - bypassing entity matching.")
+        raw_data = []
+        for name, data in fetched_data.items():
+            if not data:
+                logger.warning(f"No data found for raw source {name}; skipping.")
+                continue
+            if isinstance(data, list):
+                raw_data.extend(data)
+            else:
+                raw_data.append(data)
+        logger.info(f"Fetched {len(raw_data)} raw records.")
+        return raw_data
+
+    logger.info("Beginning entity matching...")
     entities = fetched_data[entity_source_name]
     if not entities:
         logger.error(f"No data found for entity source: {entity_source_name}")
@@ -52,7 +71,10 @@ def fetch_all(sources: list) -> dict:
         name = source.get("name", "<unknown>")
         try:
             results[name] = fetch_from_source(source)
-            logger.info(f"Fetched data from source: {name}")
+            if results[name]:
+                logger.info(f"Fetched data from source: {name}")
+            else:
+                logger.warning(f"No data returned from source: {name}")
         except Exception as e:
             logger.error(f"Failed to fetch from source '{name}': {e}")
             results[name] = None

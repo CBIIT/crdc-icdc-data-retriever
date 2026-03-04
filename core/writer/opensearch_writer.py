@@ -249,13 +249,15 @@ class OpenSearchWriter:
         Returns:
             str: The constructed document ID.
         """
+        repository_fingerprint = OpenSearchWriter._build_repository_fingerprint(doc)
+
         # handle ICDC-style data
         if "clinical_study_designation" in doc:
-            return f"{project}_{doc['clinical_study_designation']}"
+            return f"{project}_{repository_fingerprint}_{doc['clinical_study_designation']}"
 
         # alternate ICDC format
         if "entity_id" in doc:
-            return f"{project}_{doc['entity_id']}"
+            return f"{project}_{repository_fingerprint}_{doc['entity_id']}"
 
         # handle CCDI-style data
         if "repository" in doc and "data" in doc:
@@ -274,6 +276,38 @@ class OpenSearchWriter:
         doc_hash = hashlib.md5(json.dumps(doc, sort_keys=True).encode()).hexdigest()[
             :12
         ]
-        repository = doc.get("repository", "") or "unknown"
+        repository = repository_fingerprint or "unknown"
 
         return f"{project}_{repository}_{doc_hash}"
+
+    @staticmethod
+    def _build_repository_fingerprint(doc: dict) -> str:
+        """
+        Builds a stable repository fingerprint for ID generation.
+
+        Args:
+            doc (dict): The document to inspect.
+
+        Returns:
+            str: A deterministic repository fingerprint.
+        """
+        repositories = set()
+
+        top_level_repository = doc.get("repository")
+        if top_level_repository:
+            repositories.add(str(top_level_repository))
+
+        links = doc.get("CRDCLinks")
+        if isinstance(links, list):
+            for link in links:
+                if isinstance(link, dict) and link.get("repository"):
+                    repositories.add(str(link["repository"]))
+
+        if not repositories:
+            return "unknown"
+
+        if len(repositories) == 1:
+            return next(iter(repositories))
+
+        joined = "|".join(sorted(repositories))
+        return hashlib.md5(joined.encode()).hexdigest()[:8]

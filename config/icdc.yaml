@@ -14,15 +14,15 @@ sources:
     entity_id_key: clinical_study_designation
   - name: TCIA
     type: rest
-    api_base_url: https://services.cancerimagingarchive.net/services/v4
+    api_base_url: https://nbia.cancerimagingarchive.net/nbia-api/services/v4
     dataset_base_url: https://nbia.cancerimagingarchive.net/nbia-search/?MinNumberOfStudiesCriteria=1&CollectionCriteria={collection_id}
     dataset_base_url_param: collection_id
     discovery:
-      endpoint: /TCIA/query/getCollectionValues
+      endpoint: /getCollectionValues
       match_key: Collection
       filter_prefix: ICDC-
     fetch:
-      endpoint_template: /TCIA/query/getSeries?Collection={collection_id}
+      endpoint_template: /getSeries?format=json&Collection={collection_id}
       key_param: collection_id
     post_processor: aggregate_tcia_series_data
     entity_id_key: clinical_study_designation
@@ -43,8 +43,8 @@ output:
   config:
     host: ${OPENSEARCH_HOST:-http://localhost:9200}
     index: ${OPENSEARCH_INDEX:-external_data}
-    username: ${OPENSEARCH_USERNAME:-}
-    password: ${OPENSEARCH_PASSWORD:-}
+    username: ${OPENSEARCH_USERNAME:-admin}
+    password: ${OPENSEARCH_PASSWORD:-admin}
     use_ssl: false
     verify_certs: false
     post_processor: format_for_icdc

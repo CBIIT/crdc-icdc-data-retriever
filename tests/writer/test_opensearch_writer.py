@@ -98,3 +98,35 @@ def test_bulk_write_error(mock_opensearch, mock_bulk, mock_config):
         RuntimeError, match="Bulk write failed on all configured OpenSearch hosts."
     ):
         writer.bulk_write_documents(documents)
+
+
+def test_build_doc_id_is_order_independent_for_multiple_repositories():
+    doc_a = {
+        "clinical_study_designation": "STUDY-1",
+        "CRDCLinks": [{"repository": "IDC"}, {"repository": "TCIA"}],
+    }
+    doc_b = {
+        "clinical_study_designation": "STUDY-1",
+        "CRDCLinks": [{"repository": "TCIA"}, {"repository": "IDC"}],
+    }
+
+    doc_id_a = OpenSearchWriter._build_doc_id(doc_a, "TEST")
+    doc_id_b = OpenSearchWriter._build_doc_id(doc_b, "TEST")
+
+    assert doc_id_a == doc_id_b
+
+
+def test_build_doc_id_distinguishes_repository_sets():
+    doc_idc = {
+        "clinical_study_designation": "STUDY-1",
+        "CRDCLinks": [{"repository": "IDC"}],
+    }
+    doc_tcia = {
+        "clinical_study_designation": "STUDY-1",
+        "CRDCLinks": [{"repository": "TCIA"}],
+    }
+
+    id_idc = OpenSearchWriter._build_doc_id(doc_idc, "TEST")
+    id_tcia = OpenSearchWriter._build_doc_id(doc_tcia, "TEST")
+
+    assert id_idc != id_tcia

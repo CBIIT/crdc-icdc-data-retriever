@@ -31,9 +31,12 @@ def fetch_from_source(source: dict) -> Optional[list]:
             else:
                 logger.debug(f"Using direct fetch for source: {source_name}")
                 data = fetch_direct(source)
-        elif source["type"] == "graphql":
+        elif source_type == "graphql":
             logger.debug(f"Using GraphQL fetch for source: {source_name}")
             data = fetch_graphql(source)
+        elif source_type == "static":
+            logger.debug(f"Using static data for source: {source_name}")
+            data = source.get("data", [])
         else:
             logger.warning(
                 f"Unknown source type '{source_type}' for source: {source_name}"

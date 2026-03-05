@@ -3,13 +3,13 @@ entity_source: ICDC
 sources:
   - name: IDC
     type: rest
-    api_base_url: https://api.imaging.datacommons.cancer.gov/v1
+    api_base_url: https://api.imaging.datacommons.cancer.gov/v2
     dataset_base_url: https://portal.imaging.datacommons.cancer.gov/explore/filters/?collection_id={collection_id}
     dataset_base_url_param: collection_id
     endpoint: /collections
     response_data_key: collections
     match_key: collection_id
-    filter_prefix: icdc_
+    filter_prefix: ccdi_
     post_processor: clean_idc_metadata
     entity_id_key: clinical_study_designation
   - name: TCIA
@@ -20,29 +20,62 @@ sources:
     discovery:
       endpoint: /TCIA/query/getCollectionValues
       match_key: Collection
-      filter_prefix: ICDC-
+      filter_prefix: CCDI-
     fetch:
       endpoint_template: /TCIA/query/getSeries?Collection={collection_id}
       key_param: collection_id
     post_processor: aggregate_tcia_series_data
     entity_id_key: clinical_study_designation
   - name: ICDC
-    type: graphql
-    api_base_url: https://caninecommons.cancer.gov/v1
-    endpoint: /graphql/
-    response_data_key: data.studiesByProgram
-    query: |
-      {
-        studiesByProgram {
-            clinical_study_designation
-        }
-      }
+    type: static
     entity_id_key: clinical_study_designation
+    data:
+      - clinical_study_designation: "TARGET_ALL_P1"
+      - clinical_study_designation: "TARGET_CCSK"
+      - clinical_study_designation: "TARGET_ALL_P2_P3"
+      - clinical_study_designation: "TARGET_OS"
+      - clinical_study_designation: "TARGET_AML"
+      - clinical_study_designation: "TARGET_MDLS"
+      - clinical_study_designation: "TARGET_NBL"
+      - clinical_study_designation: "TARGET_RT"
+      - clinical_study_designation: "TARGET_WT"
+      - clinical_study_designation: "CCDI_NIH_phs000720"
+      - clinical_study_designation: "KF-ESGR"
+      - clinical_study_designation: "CCSS_SMN"
+      - clinical_study_designation: "PPTC"
+      - clinical_study_designation: "KF-OS"
+      - clinical_study_designation: "KF-FALL"
+      - clinical_study_designation: "KF-GNINT"
+      - clinical_study_designation: "KF-NCSF"
+      - clinical_study_designation: "KF-MMC"
+      - clinical_study_designation: "GMKF_T-ALL"
+      - clinical_study_designation: "KF-IGCT"
+      - clinical_study_designation: "CCDI"
+      - clinical_study_designation: "CCDI_UCSF_phs002430"
+      - clinical_study_designation: "HTAN_phs002371"
+      - clinical_study_designation: "CCDI_UCSF_phs002504"
+      - clinical_study_designation: "CBTN"
+      - clinical_study_designation: "CCDI_MSK_phs002620"
+      - clinical_study_designation: "CCDI_USC_phs002518"
+      - clinical_study_designation: "CCDI_DFCI_phs002677"
+      - clinical_study_designation: "CCDI_OHSU_phs002599"
+      - clinical_study_designation: "CCDI_KUMC_phs002529"
+      - clinical_study_designation: "CCDI-MCI"
+      - clinical_study_designation: "PedMATCH"
+      - clinical_study_designation: "CCDI_MSK_phs003111"
+      - clinical_study_designation: "CCDI PIVOT Orthotopic Ewing Kidney Liver"
+      - clinical_study_designation: "CCDI PIVOT Sarcomas SolidTumors"
+      - clinical_study_designation: "CCDI PIVOT NBL"
+      - clinical_study_designation: "CCDI PIVOT LEU"
+      - clinical_study_designation: "Texas Pediatric PDX"
+      - clinical_study_designation: "TALLsc"
+      - clinical_study_designation: "CCDI_NCI_phs003519"
+      - clinical_study_designation: "Metastatic Osteosarcoma Spatial Profiling"
 output:
   destination: opensearch
   config:
     host: https://vpc-ccdi-dev-hub-opensearch-bzgr6b4fqf4qdmgugczgdigcvm.us-east-1.es.amazonaws.com
-    index: external-hub
+    index: supportingdata
     # username: ${OPENSEARCH_USERNAME:-}
     # password: ${OPENSEARCH_PASSWORD:-}
     use_ssl: false

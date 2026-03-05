@@ -42,6 +42,7 @@ output:
   destination: opensearch
   config:
     host: ${ES_HOST:-}
+    port: ${ES_PORT:-443}
     index: ${OPENSEARCH_INDEX:-external_data}
     # username: ${OPENSEARCH_USERNAME:-}
     # password: ${OPENSEARCH_PASSWORD:-}

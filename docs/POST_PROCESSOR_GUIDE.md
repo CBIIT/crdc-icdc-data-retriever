@@ -41,7 +41,7 @@ The `context` dict passed as `**kwargs` contains:
 
 ### Output-level post-processors
 
-Configured under `output.config.post_processor`. Called once with the full list of documents before bulk writing to OpenSearch. Typically used to reshape or reformat the entire result set (e.g. adding timestamps, restructuring fields for a specific downstream schema).
+Configured under `output.config.post_processor`. Called with the full list of documents before each bulk write attempt to OpenSearch (for example, once per configured host or retry). Typically used to reshape or reformat the entire result set (e.g. adding timestamps, restructuring fields for a specific downstream schema), so be aware that side effects (like timestamp generation) may occur multiple times if multiple hosts are configured or retries happen.
 
 ```yaml
 output:

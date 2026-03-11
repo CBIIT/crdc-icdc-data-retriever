@@ -13,7 +13,7 @@ Both levels use the same function registry and decorator; placement in the confi
 
 ### Source-level post-processors
 
-Configured on a source via the `post_processor` field. Called once per matched entity with that source's metadata. The return value replaces the `metadata` field in the corresponding `CRDCLinks` entry.
+Configured on a source via the `post_processor` field. Called once per matched metadata collection (i.e., per `CRDCLinks` entry) with that source's metadata; a single entity may trigger multiple calls if it matches multiple collections. The return value replaces the `metadata` field in the corresponding `CRDCLinks` entry.
 
 ```yaml
 sources:

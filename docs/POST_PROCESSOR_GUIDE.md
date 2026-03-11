@@ -166,7 +166,7 @@ POST_PROCESSOR_MAP = {
 }
 ```
 
-The registry also handles graceful kwarg forwarding: if a post-processor does not accept the context kwargs, they are silently dropped rather than raising a `TypeError`.
+The registry also handles kwarg forwarding: it first attempts to call the post-processor with the full set of context kwargs, and if it encounters an "unexpected keyword argument" `TypeError`, it retries the call without any kwargs. This means context is passed in an all-or-nothing fashion rather than dropping only the unknown kwargs. If your post-processor needs context values, declare parameters for the full expected context or accept `**kwargs` to ensure those values are available.
 
 ---
 

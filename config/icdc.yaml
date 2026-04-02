@@ -28,6 +28,15 @@ sources:
     entity_id_key: clinical_study_designation
   - name: ICDC
     type: static
+    api_base_url: https://ccdi.cancer.gov/v1
+    endpoint: /graphql/
+    response_data_key: data.studiesByProgram
+    query: |
+      {
+        studiesByProgram {
+            clinical_study_designation
+        }
+      }
     entity_id_key: clinical_study_designation
     data:
       - clinical_study_designation: "TARGET_ALL_P1"

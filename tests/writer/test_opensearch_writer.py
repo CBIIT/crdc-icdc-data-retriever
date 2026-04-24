@@ -14,6 +14,7 @@ def mock_config():
         "output": {
             "config": {
                 "host": "https://mock-host",
+                "port": 9200,
                 "index": "test_index",
                 "use_ssl": True,
                 "verify_certs": True,

@@ -41,12 +41,13 @@ sources:
 output:
   destination: opensearch
   config:
-    host: ${OPENSEARCH_HOST:-http://localhost:9200}
+    host: ${ES_HOST:-}
+    port: ${ES_PORT:-443}
     index: ${OPENSEARCH_INDEX:-external_data}
     # username: ${OPENSEARCH_USERNAME:-}
     # password: ${OPENSEARCH_PASSWORD:-}
-    use_ssl: false
-    verify_certs: false
+    use_ssl: true
+    verify_certs: true
     post_processor: format_for_icdc
 # notifications:
 #   destination: sns

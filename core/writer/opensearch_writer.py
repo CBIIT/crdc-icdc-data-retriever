@@ -36,11 +36,12 @@ class OpenSearchWriter:
 
         self.index = self.output_config["index"]
         hosts = self.output_config.get("hosts") or self.output_config.get("host")
+        port = self.output_config.get("port")
 
         if isinstance(hosts, str):
-            self.hosts = [hosts] if hosts else []
+            self.hosts = [hosts + ":" + str(port)] if hosts else []
         elif isinstance(hosts, list):
-            self.hosts = [host for host in hosts if host]
+            self.hosts = [host + ":" + str(port) for host in hosts if host]
         else:
             self.hosts = []
 

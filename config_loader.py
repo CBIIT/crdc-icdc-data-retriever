@@ -4,10 +4,16 @@ import re
 
 import yaml
 
+from core.processor.post_processor_registry import (
+    get_post_processors,
+    POST_PROCESSOR_MAP,
+)
+
 logger = logging.getLogger(__name__)
 
 
 ENV_VAR_PATTERN = re.compile(r"\$\{([^}:\s]+)(?::-(.*?)?)?\}")
+VALID_POST_PROCESSOR_STAGES = ("per_match", "post_match")
 
 
 class ConfigHandler:
@@ -134,6 +140,19 @@ class ConfigHandler:
                         "Invalid host entry in 'hosts' list: expected non-empty strings"
                     )
 
+        if "post_processors" in config_block:
+            pp_names = config_block["post_processors"]
+            if not isinstance(pp_names, list):
+                raise ValueError(
+                    "Invalid 'post_processors' value in 'output.config': expected a list of post-processor names"
+                )
+            try:
+                get_post_processors(pp_names)
+            except ValueError as e:
+                raise ValueError(
+                    f"Invalid post-processor names in 'output.config': {e}"
+                ) from e
+
     @staticmethod
     def _validate_notifications_config(notifications: dict) -> None:
         """
@@ -178,6 +197,7 @@ class ConfigHandler:
         """
         logger.debug("Validating sources configuration block")
 
+        source_name = source.get("name", "<unknown>")
         source_type = source.get("type", "").lower()
         required_base_keys = ["name", "type", "api_base_url"]
 
@@ -191,6 +211,10 @@ class ConfigHandler:
         if source_type == "rest_raw":
             if "endpoint" not in source:
                 raise ValueError("Source of type 'rest_raw' must define an 'endpoint'")
+            if "post_processors" in source:
+                raise ValueError(
+                    "Source of type 'rest_raw' cannot define 'post_processors'"
+                )
         else:
             if "discovery" not in source and "endpoint" not in source:
                 raise ValueError("Source must define either 'endpoint' or 'discovery'")
@@ -216,6 +240,34 @@ class ConfigHandler:
                 raise ValueError(
                     "'fetch' property requires defined 'endpoint_template' and 'key_param'"
                 )
+
+        if "post_processor" in source:
+            raise ValueError(
+                f"Source '{source_name}': 'post_processor' key is deprecated; use 'post_processors' with 'per_match'/'post_match'"
+            )
+
+        if "post_processors" in source:
+            post_processors = source["post_processors"]
+            if not isinstance(post_processors, dict):
+                raise ValueError(
+                    f"Source '{source_name}': 'post_processors' must be a dictionary with 'per_match' and/or 'post_match' keys"
+                )
+            unknown_pp_keys = set(post_processors) - set(VALID_POST_PROCESSOR_STAGES)
+            if unknown_pp_keys:
+                raise ValueError(
+                    f"Source '{source_name}': Unknown post-processor keys: {sorted(unknown_pp_keys)}. Valid keys are: {sorted(VALID_POST_PROCESSOR_STAGES)}"
+                )
+            for stage, pp_names in post_processors.items():
+                if not isinstance(pp_names, list):
+                    raise ValueError(
+                        f"Source '{source_name}': Post-processor stage '{stage}' must be a list of processor names"
+                    )
+                try:
+                    get_post_processors(pp_names)
+                except ValueError as e:
+                    raise ValueError(
+                        f"Source '{source_name}': Invalid post-processor names in stage '{stage}': {e}"
+                    ) from e
 
     @staticmethod
     def _require_dict_block(parent: dict, key: str, context: str) -> None:

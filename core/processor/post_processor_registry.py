@@ -1,5 +1,5 @@
 import inspect
-from typing import Callable, Optional, Any
+from typing import Callable, Any
 
 import core.processor.post_processor as post_processor
 
@@ -10,33 +10,48 @@ POST_PROCESSOR_MAP = {
 }
 
 
-def get_post_processor(name: str) -> Optional[Callable[..., Any]]:
-    """Maps a post-processor name to its corresponding function.
+def get_post_processors(names: str | list | None) -> list[Callable[..., Any]]:
+    """Maps post-processor names to their corresponding functions.
 
     Args:
-        name (str): Post-processor name.
+        names (str | list | None): Post-processor name or list of names.
 
     Returns:
-        Optional[Callable[..., Any]]: A corresponding post-processor function
-        or None if not found.
+        list[Callable[..., Any]]: A list of corresponding post-processor functions.
     """
-    return POST_PROCESSOR_MAP.get(name)
+    if names is None:
+        names = []
+    elif isinstance(names, str):
+        names = [names]
+
+    pp_functions = []
+    for pp_name in names:
+        if pp_name not in POST_PROCESSOR_MAP:
+            raise ValueError(
+                f"Unknown post-processor '{pp_name}'. Available: {sorted(POST_PROCESSOR_MAP)}"
+            )
+        pp_functions.append(POST_PROCESSOR_MAP[pp_name])
+    return pp_functions
 
 
-def apply_post_processor(fn: Callable[..., Any], metadata: dict, **kwargs: dict) -> Any:
-    """Applies a post-processor function to supplied metadata.
+def apply_post_processors(
+    fns: list[Callable[..., Any]], data: Any, **kwargs: Any
+) -> Any:
+    """Applies post-processor functions to supplied metadata.
 
     Args:
-        fn (Callable[..., Any]): Post-processor function.
-        metadata (dict): Metadata undergoing post-processing.
+        fns (list[Callable[..., Any]]): List of post-processor functions.
+        data (Any): Data undergoing post-processing.
         kwargs (dict): Additional post-processor kwargs.
     Returns:
-        Any: The result of the post-processor function call.
+        Any: The result of the last post-processor function call.
     """
-    try:
-        return fn(metadata, **kwargs)
-    except TypeError as e:
-        if "unexpected keyword argument" in str(e):
-            return fn(metadata)
+    result = data
+    for fn in fns:
+        params = inspect.signature(fn).parameters
+        if any(p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values()):
+            accepted = kwargs
         else:
-            raise e
+            accepted = {k: v for k, v in kwargs.items() if k in params}
+        result = fn(result, **accepted)
+    return result
